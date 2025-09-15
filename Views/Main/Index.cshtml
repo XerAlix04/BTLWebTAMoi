@@ -1,0 +1,118 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@* <section class="slideshow-section">
+    <div class="slideshow-container">
+        <div class="slide fade">
+            <img src="images/slide1.jpg" class="slide-img" alt="Slide 1">
+        </div>
+        <div class="slide fade">
+            <img src="images/slide2.png" class="slide-img" alt="Slide 2">
+        </div>
+        <div class="slide fade">
+            <img src="images/slide3.webp" class="slide-img" alt="Slide 3">
+        </div>
+        <a class="prev" onclick="plusSlides(-1)">&#10094;</a>
+        <a class="next" onclick="plusSlides(1)">&#10095;</a>
+    </div>
+</section> *@
+
+<section class="content-section">
+    <div class="content">
+        <!-- TAB TỪ VỰNG -->
+        <div id="vocab" class="tab active">
+            <div class="card">
+                <h2>Từ vựng hôm nay</h2>
+                <p><b id="vocabWord">Apple</b> → Quả táo</p>
+                <button class="action" onclick="playAudio(document.getElementById('vocabWord').textContent)">🔊 Nghe phát âm</button>
+                <button class="action" onclick="saveWord(document.getElementById('vocabWord').textContent)">⭐ Lưu từ</button>
+                <br><br>
+                <input type="text" id="customWord" placeholder="Nhập từ mới...">
+                <button class="action" onclick="playAudio(document.getElementById('customWord').value)">🔊 Nghe phát âm từ nhập</button>
+                <button class="action" onclick="saveWord(document.getElementById('customWord').value)">⭐ Lưu từ nhập</button>
+            </div>
+        </div>
+
+        <!-- TAB NGHE & NÓI -->
+        <div id="listening" class="tab">
+            <div class="card">
+                <h2>Bài nghe & Nói</h2>
+                <audio controls>
+                    <source src="audio/lesson1.mp3" type="audio/mpeg">
+                </audio>
+                <br>
+                <button class="action" onclick="recordSpeech()">🎤 Ghi âm phát âm</button>
+            </div>
+        </div>
+
+        <!-- TAB VIẾT -->
+        <div id="writing" class="tab">
+            <div class="card">
+                <h2>Bài viết</h2>
+                <textarea id="writingText" rows="5" style="width:100%" placeholder="Nhập đoạn văn cần kiểm tra..."></textarea>
+                <button class="action" onclick="checkGrammar()">✅ Kiểm tra lỗi ngữ pháp</button>
+            </div>
+        </div>
+
+        <!-- TAB ĐỌC HIỂU -->
+        <div id="reading" class="tab">
+            <div class="card">
+                <h2>Bài đọc</h2>
+                <textarea id="readingText" rows="5" style="width:100%" placeholder="Nhập đoạn văn để sinh câu hỏi..."></textarea>
+                <button class="action" onclick="generateQuestions()">❓ Tạo câu hỏi trắc nghiệm</button>
+            </div>
+        </div>
+
+        <!-- TAB THI THỬ -->
+        <div id="exam" class="tab">
+            <div class="card">
+                <h2>Bài thi</h2>
+                <p id="examQuestion">1. What is the meaning of "Dog"?</p>
+                <button class="action" onclick="submitAnswer('A')">A. Con mèo</button>
+                <button class="action" onclick="submitAnswer('B')">B. Con chó</button>
+                <button class="action" onclick="submitAnswer('C')">C. Con gà</button>
+            </div>
+        </div>
+
+        <!-- TAB CHATBOT -->
+        <div id="chatbot" class="tab">
+            <div class="card">
+                <h2>Chatbot hội thoại</h2>
+                <div id="chatbox" class="chatbox">
+                    <p><b>Bot:</b> Hello! How are you?</p>
+                </div>
+                <div class="chat-input-row">
+                    <input type="text" id="chatInput" placeholder="Nhập tin nhắn...">
+                    <button class="action" onclick="sendMessage()">Gửi</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB TIẾN ĐỘ -->
+        <div id="progress" class="tab">
+            <div class="card">
+                <h2>Tiến độ học tập</h2>
+                <button class="action" onclick="loadProgress()">🔄 Tải tiến độ</button>
+                <div class="progress-row" style="margin-top:16px;">
+                    <div>
+                        <span>Học từ vựng</span>
+                        <progress value="70" max="100"></progress>
+                        <span>70%</span>
+                    </div>
+                    <div>
+                        <span>Luyện nghe</span>
+                        <progress value="50" max="100"></progress>
+                        <span>50%</span>
+                    </div>
+                    <div>
+                        <span>Luyện viết</span>
+                        <progress value="30" max="100"></progress>
+                        <span>30%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

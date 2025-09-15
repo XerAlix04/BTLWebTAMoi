@@ -1,0 +1,66 @@
+﻿    <!DOCTYPE html>
+    <html lang="vi">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>@ViewData["Title"] - English UTC</title>
+        <link rel="stylesheet" href="~/css/style.css" />
+    </head>
+    <body>
+        <div class="layout-root">
+            <header>
+                <div class="header-container">
+                    <h1>English UTC</h1>
+                    <div class="auth">
+                        <button onclick="showAuth('login')">Đăng nhập</button>
+                        <button onclick="showAuth('register')">Đăng ký</button>
+                    </div>
+                </div>
+                <nav>
+                    <button onclick="openTab('vocab')" class="active">📚 Từ vựng</button>
+                    <button onclick="openTab('listening')">🎧 Nghe & Nói</button>
+                    <button onclick="openTab('writing')">✍️ Viết</button>
+                    <button onclick="openTab('reading')">📖 Đọc hiểu</button>
+                    <button onclick="openTab('exam')">📝 Thi thử</button>
+                    <button onclick="openTab('chatbot')">🤖 Chatbot</button>
+                    <button onclick="openTab('progress')">📊 Tiến độ</button>
+                </nav>
+            </header>
+
+            <main>
+                @RenderBody()
+            </main>
+
+            <!-- Modal đăng nhập/đăng ký -->
+            <div id="authModal" class="modal">
+                <div class="modal-content">
+                    <span class="close" onclick="closeAuth()">&times;</span>
+                    <div id="loginForm" style="display:none;">
+                        <h2>Đăng nhập</h2>
+                        <input type="text" id="loginUser" placeholder="Tên đăng nhập"><br>
+                        <input type="password" id="loginPass" placeholder="Mật khẩu"><br>
+                        <button onclick="login()">Đăng nhập</button>
+                    </div>
+                    <div id="registerForm" style="display:none;">
+                        <h2>Đăng ký</h2>
+                        <input type="text" id="regUser" placeholder="Tên đăng nhập"><br>
+                        <input type="password" id="regPass" placeholder="Mật khẩu"><br>
+                        <button onclick="register">Đăng ký</button>
+                    </div>
+                </div>
+            </div>
+
+            <footer>
+                <div class="footer-content">
+                    <p><b>Liên hệ:</b></p>
+                    <p>Email: UTC@hoctienganh.com</p>
+                    <p>Hotline: 0123 456 789</p>
+                    <p>Địa chỉ: Đại học giao thông vận tải</p>
+                    <p>&copy;Ứng dụng học ngoại ngữ thông minh</p>
+                </div>
+            </footer>
+        </div>
+
+        <script src="~/js/main.js"></script>
+    </body>
+    </html>

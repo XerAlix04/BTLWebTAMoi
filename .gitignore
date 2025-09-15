@@ -1,0 +1,15 @@
+# Build results
+bin/
+obj/
+
+# VS cache
+.vs/
+
+# User-specific files
+*.user
+*.rsuser
+*.suo
+
+# Logs, databases
+*.log
+*.db
