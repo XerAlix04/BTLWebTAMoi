@@ -33,34 +33,132 @@
 
         <!-- TAB NGHE & NÓI -->
         <div id="listening" class="tab">
-            <div class="card">
-                <h2>Bài nghe & Nói</h2>
+            <div class="card listening-card">
+                <h2 class="title">🎧 Bài nghe & Nói</h2>
 
-                <!-- Bài nghe mẫu -->
-                <audio controls>
-                    <source src="audio/lesson1.mp3" type="audio/mpeg">
-                </audio>
-                <br><br>
-
-                <div style="margin-top:15px;">
+                <!-- Hiển thị từ cần phát âm -->
+                <div class="word-section">
                     <h3>🔤 Hãy phát âm từ sau:</h3>
-                    <div id="randomWord" style="font-size:28px;font-weight:bold;color:#007bff;">(Đang tải...)</div>
-                    <button class="action" id="newWordBtn">🎲 Lấy từ mới</button>
+                    <div id="randomWord" class="word-box">@ViewBag.Word</div>
+                    <input type="hidden" name="referenceText" value="@ViewBag.Word" />
+
+                    <button class="action-btn" id="newWordBtn" data-url="/Speech/Index">🎲 Lấy từ mới</button>
                 </div>
 
                 <!-- Ghi âm -->
-                <button class="action" id="startRecordingBtn">🎤 Bắt đầu ghi âm</button>
-                <button class="action" id="stopRecordingBtn" disabled>⏹️ Dừng ghi âm</button>
-                <br><br>
+                <div class="record-section">
+                    <button class="action-btn start" id="startRecordingBtn">🎤 Bắt đầu ghi âm</button>
+                    <button class="action-btn stop" id="stopRecordingBtn" disabled>⏹️ Dừng ghi âm</button>
+                </div>
 
                 <!-- Nghe lại bản ghi -->
-                <audio id="audioPlayer" controls style="display:none;"></audio>
+                <audio id="audioPlayer" controls style="display:none; margin-top:15px; width:100%;"></audio>
 
-                <!-- Hiển thị kết quả chấm điểm -->
-                <div id="speechResult" style="margin-top:10px;"></div>
-                <div id="speechStatus" style="margin-top:5px;color:gray;"></div>
+                <!-- Hiển thị kết quả -->
+                <div id="speechResult" class="result-box"></div>
+                <div id="speechStatus" class="status-text"></div>
             </div>
         </div>
+
+        <style>
+            /* Khung chính */
+            .listening-card {
+                max-width: 500px;
+                margin: 30px auto;
+                padding: 25px;
+                background: #ffffff;
+                border-radius: 16px;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+                text-align: center;
+                font-family: "Segoe UI", sans-serif;
+            }
+
+            .title {
+                font-size: 24px;
+                color: #333;
+                margin-bottom: 15px;
+            }
+
+            /* Khu vực hiển thị từ */
+            .word-section {
+                margin-top: 15px;
+            }
+
+            .word-box {
+                font-size: 28px;
+                font-weight: bold;
+                background: #f0f4ff;
+                color: #1d4ed8;
+                padding: 12px 20px;
+                border-radius: 12px;
+                display: inline-block;
+                margin: 10px 0;
+                transition: transform 0.2s ease;
+            }
+
+                .word-box:hover {
+                    transform: scale(1.1);
+                }
+
+            /* Nút hành động */
+            .action-btn {
+                margin: 6px;
+                padding: 10px 20px;
+                border: none;
+                border-radius: 8px;
+                font-size: 15px;
+                cursor: pointer;
+                background-color: #2563eb;
+                color: white;
+                transition: background 0.3s, transform 0.2s;
+            }
+
+                .action-btn:hover {
+                    background-color: #1e40af;
+                    transform: translateY(-2px);
+                }
+
+                .action-btn:disabled {
+                    background-color: #9ca3af;
+                    cursor: not-allowed;
+                }
+
+            .start {
+                background-color: #10b981;
+            }
+
+                .start:hover {
+                    background-color: #059669;
+                }
+
+            .stop {
+                background-color: #ef4444;
+            }
+
+                .stop:hover {
+                    background-color: #dc2626;
+                }
+
+            /* Kết quả */
+            .result-box {
+                margin-top: 15px;
+                font-size: 16px;
+                font-weight: 500;
+                color: #111827;
+                background: #f9fafb;
+                border-radius: 10px;
+                padding: 10px;
+                display: block;
+            }
+
+            .status-text {
+                margin-top: 8px;
+                color: gray;
+                font-size: 14px;
+            }
+        </style>
+
+
 
         <!-- 🔵 TAB 3: VIẾT -->
         <div id="writing" class="tab">

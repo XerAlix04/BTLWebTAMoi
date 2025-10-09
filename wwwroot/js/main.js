@@ -158,6 +158,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let mediaRecorder;
     let audioChunks = [];
 
+    // 🎤 Bắt đầu ghi âm
     startBtn.addEventListener("click", async () => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -166,20 +167,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
             mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
 
+            // Khi dừng ghi -> xử lý file và gửi đi
             mediaRecorder.onstop = async () => {
-                const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
                 audioPlayer.src = URL.createObjectURL(audioBlob);
                 audioPlayer.style.display = "block";
 
                 statusDiv.textContent = "⏳ Đang gửi file lên server...";
-                const formData = new FormData();
-                formData.append("audio", audioBlob, "recorded.webm");
+                resultDiv.innerHTML = "";
 
                 try {
-                    const response = await fetch("/Speech/Check", { method: "POST", body: formData });
-                    const html = await response.text();
-                    resultDiv.innerHTML = html;
-                    statusDiv.textContent = "✅ Gửi thành công!";
+                    // 🔹 Gửi file cùng từ chuẩn hiện tại
+                    await sendAudioToServer(audioBlob);
+                    statusDiv.textContent = "✅ Đã chấm điểm xong!";
                 } catch (err) {
                     console.error("Upload failed:", err);
                     statusDiv.textContent = "❌ Gửi thất bại!";
@@ -192,7 +192,7 @@ document.addEventListener("DOMContentLoaded", () => {
             mediaRecorder.start();
             startBtn.disabled = true;
             stopBtn.disabled = false;
-            statusDiv.textContent = "🎤 Đang ghi âm...";
+            statusDiv.textContent = "🎙️ Đang ghi âm...";
             resultDiv.innerHTML = "";
         } catch (err) {
             console.error("Mic error:", err);
@@ -200,6 +200,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
+    // ⏹️ Dừng ghi âm
     stopBtn.addEventListener("click", () => {
         if (mediaRecorder && mediaRecorder.state !== "inactive") {
             mediaRecorder.stop();
@@ -209,6 +210,53 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 });
+
+
+// --- HIỂN THỊ & LẤY TỪ RANDOM TỪ BACKEND ---
+async function loadRandomWord() {
+    const randomWordDiv = document.getElementById("randomWord");
+    randomWordDiv.textContent = "⏳ Đang tải...";
+    try {
+        const res = await fetch("/Speech/Index", {
+            method: "GET",
+            headers: { "Accept": "application/json" }
+        });
+
+        if (!res.ok) throw new Error("Không tải được từ.");
+        const data = await res.json();
+
+        randomWordDiv.textContent = data.randomWord;
+        window.currentWord = data.randomWord; // 🔹 Lưu để chấm phát âm
+    } catch (err) {
+        randomWordDiv.textContent = "❌ Lỗi tải từ";
+        console.error(err);
+    }
+}
+
+document.getElementById("newWordBtn")?.addEventListener("click", loadRandomWord);
+loadRandomWord();
+
+
+// --- GỬI FILE ÂM THANH + TỪ CHUẨN LÊN SERVER ---
+async function sendAudioToServer(blob) {
+    const formData = new FormData();
+    formData.append("audio", blob, "recorded.webm");
+    formData.append("referenceText", window.currentWord || ""); // 🔹 Từ hiện tại
+
+    const res = await fetch("/Speech/Check", {
+        method: "POST",
+        body: formData
+    });
+
+    const resultDiv = document.getElementById("speechResult");
+    if (res.ok) {
+        const html = await res.text();
+        resultDiv.innerHTML = html;
+    } else {
+        resultDiv.textContent = "❌ Lỗi khi chấm điểm.";
+    }
+}
+
 
 
 // Kiểm tra ngữ pháp
@@ -490,29 +538,3 @@ async function finishQuiz() {
 // --- End quiz flow implementation ---
 
 
-// --- HIỂN THỊ VÀ LẤY TỪ RANDOM TỪ BACKEND ---MOI
-async function loadRandomWord() {
-    try {
-        const res = await fetch("https://localhost:7290/Speech/Index", {
-            method: "GET",
-            headers: { "Accept": "application/json" }
-        });
-
-        if (!res.ok) throw new Error("Không tải được từ.");
-        const data = await res.json();
-        document.getElementById("randomWord").textContent = data.randomWord;
-
-        // Lưu lại để gửi khi chấm điểm
-        window.currentWord = data.randomWord;
-
-    } catch (err) {
-        document.getElementById("randomWord").textContent = "❌ Lỗi tải từ";
-        console.error(err);
-    }
-}
-
-const btn = document.getElementById("newWordBtn");
-if (btn) btn.addEventListener("click", loadRandomWord);
-
-// Tải từ đầu tiên khi mở tab
-loadRandomWord();
