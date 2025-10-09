@@ -3,32 +3,28 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-@* <section class="slideshow-section">
-    <div class="slideshow-container">
-        <div class="slide fade">
-            <img src="images/slide1.jpg" class="slide-img" alt="Slide 1">
-        </div>
-        <div class="slide fade">
-            <img src="images/slide2.png" class="slide-img" alt="Slide 2">
-        </div>
-        <div class="slide fade">
-            <img src="images/slide3.webp" class="slide-img" alt="Slide 3">
-        </div>
-        <a class="prev" onclick="plusSlides(-1)">&#10094;</a>
-        <a class="next" onclick="plusSlides(1)">&#10095;</a>
-    </div>
-</section> *@
+<!-- ====================== -->
+<!-- PHẦN TRÌNH CHIẾU (TÙY CHỌN) -->
+<!-- ====================== -->
 
+
+<!-- ====================== -->
+<!-- NỘI DUNG CHÍNH -->
+<!-- ====================== -->
 <section class="content-section">
     <div class="content">
-        <!-- TAB TỪ VỰNG -->
+
+        <!-- 🟢 TAB 1: TỪ VỰNG -->
         <div id="vocab" class="tab active">
             <div class="card">
                 <h2>Từ vựng hôm nay</h2>
                 <p><b id="vocabWord">Apple</b> → Quả táo</p>
+
                 <button class="action" onclick="playAudio(document.getElementById('vocabWord').textContent)">🔊 Nghe phát âm</button>
                 <button class="action" onclick="saveWord(document.getElementById('vocabWord').textContent)">⭐ Lưu từ</button>
+
                 <br><br>
+
                 <input type="text" id="customWord" placeholder="Nhập từ mới...">
                 <button class="action" onclick="playAudio(document.getElementById('customWord').value)">🔊 Nghe phát âm từ nhập</button>
                 <button class="action" onclick="saveWord(document.getElementById('customWord').value)">⭐ Lưu từ nhập</button>
@@ -39,44 +35,110 @@
         <div id="listening" class="tab">
             <div class="card">
                 <h2>Bài nghe & Nói</h2>
+
+                <!-- Bài nghe mẫu -->
                 <audio controls>
                     <source src="audio/lesson1.mp3" type="audio/mpeg">
                 </audio>
-                <br>
-                <button class="action" onclick="recordSpeech()">🎤 Ghi âm phát âm</button>
+                <br><br>
+
+                <div style="margin-top:15px;">
+                    <h3>🔤 Hãy phát âm từ sau:</h3>
+                    <div id="randomWord" style="font-size:28px;font-weight:bold;color:#007bff;">(Đang tải...)</div>
+                    <button class="action" id="newWordBtn">🎲 Lấy từ mới</button>
+                </div>
+
+                <!-- Ghi âm -->
+                <button class="action" id="startRecordingBtn">🎤 Bắt đầu ghi âm</button>
+                <button class="action" id="stopRecordingBtn" disabled>⏹️ Dừng ghi âm</button>
+                <br><br>
+
+                <!-- Nghe lại bản ghi -->
+                <audio id="audioPlayer" controls style="display:none;"></audio>
+
+                <!-- Hiển thị kết quả chấm điểm -->
+                <div id="speechResult" style="margin-top:10px;"></div>
+                <div id="speechStatus" style="margin-top:5px;color:gray;"></div>
             </div>
         </div>
 
-        <!-- TAB VIẾT -->
+        <!-- 🔵 TAB 3: VIẾT -->
         <div id="writing" class="tab">
-            <div class="card">
+            @* <div class="card">
                 <h2>Bài viết</h2>
                 <textarea id="writingText" rows="5" style="width:100%" placeholder="Nhập đoạn văn cần kiểm tra..."></textarea>
                 <button class="action" onclick="checkGrammar()">✅ Kiểm tra lỗi ngữ pháp</button>
+            </div> *@
+
+            <!-- ---------- PHẦN OCR / UPLOAD ẢNH ---------- -->
+            <div class="card" style="margin-top:16px;">
+                <h2>Nhận diện chữ viết tay (OCR)</h2>
+
+                <!-- Nếu bạn dùng ASP.NET MVC với antiforgery, giữ dòng @Html.AntiForgeryToken() -->
+                @* Nếu không dùng Razor, xóa dòng dưới *@
+                @Html.AntiForgeryToken()
+
+                <div style="display:flex;gap:12px;align-items:center;">
+                    <input type="file" id="ocrFile" accept="image/*" />
+                    <button id="btnOcr" class="action">🔍 Nhận diện</button>
+                    <span id="ocrStatus" style="margin-left:8px;color:#666"></span>
+                </div>
+
+                <div id="previewContainer" style="margin-top:10px;">
+                    <img id="previewImage" src="" alt="preview" style="max-width:100%; display:none; border:1px solid #ddd; padding:6px; border-radius:4px;" />
+                </div>
+
+                <h3 style="margin-top:12px">Kết quả</h3>
+                <pre id="ocrResult" style="white-space:pre-wrap; background:#fafafa; padding:12px; border-radius:6px; min-height:60px;"></pre>
             </div>
         </div>
 
-        <!-- TAB ĐỌC HIỂU -->
+        @* <!-- 🟣 TAB 4: ĐỌC HIỂU -->
         <div id="reading" class="tab">
             <div class="card">
                 <h2>Bài đọc</h2>
                 <textarea id="readingText" rows="5" style="width:100%" placeholder="Nhập đoạn văn để sinh câu hỏi..."></textarea>
                 <button class="action" onclick="generateQuestions()">❓ Tạo câu hỏi trắc nghiệm</button>
             </div>
-        </div>
+        </div> *@
 
-        <!-- TAB THI THỬ -->
+        <!-- 🟠 TAB 5: THI THỬ -->
         <div id="exam" class="tab">
             <div class="card">
                 <h2>Bài thi</h2>
-                <p id="examQuestion">1. What is the meaning of "Dog"?</p>
-                <button class="action" onclick="submitAnswer('A')">A. Con mèo</button>
-                <button class="action" onclick="submitAnswer('B')">B. Con chó</button>
-                <button class="action" onclick="submitAnswer('C')">C. Con gà</button>
+
+                <div id="quizContainer">
+                    <div id="quizHeader" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                        <div><strong>Câu <span id="questionNumber">0</span> / <span id="totalQuestions">10</span></strong></div>
+                        <div id="quizTimer" style="color:#666; font-size:0.9em"></div>
+                    </div>
+
+                    <p id="examQuestion" style="font-weight:600; min-height:48px;">Nhấn "Bắt đầu" để bắt đầu bài thi.</p>
+
+                    <div id="answerButtons" style="display:flex;flex-direction:column;gap:8px; margin-top:8px;">
+                        <button class="action answer-btn" data-choice="A" onclick="selectAnswer('A')">A</button>
+                        <button class="action answer-btn" data-choice="B" onclick="selectAnswer('B')">B</button>
+                        <button class="action answer-btn" data-choice="C" onclick="selectAnswer('C')">C</button>
+                        <button class="action answer-btn" data-choice="D" onclick="selectAnswer('D')">D</button>
+                    </div>
+
+                    <div style="margin-top:12px; display:flex; gap:8px; align-items:center;">
+                        <button id="startQuizBtn" class="action" onclick="startQuiz()">Bắt đầu</button>
+                        <button id="nextBtn" class="action" onclick="nextQuestion()" style="display:none">Tiếp</button>
+                        <div id="progressInfo" style="margin-left:12px;color:#666"></div>
+                    </div>
+
+                    <div id="quizResult" style="display:none; margin-top:14px;">
+                        <h3>Kết quả</h3>
+                        <p id="resultText"></p>
+                        <button class="action" onclick="startQuiz()">Làm lại</button>
+                    </div>
+                </div>
+
             </div>
         </div>
 
-        <!-- TAB CHATBOT -->
+        <!-- 🧠 TAB 6: CHATBOT -->
         <div id="chatbot" class="tab">
             <div class="card">
                 <h2>Chatbot hội thoại</h2>
@@ -90,11 +152,12 @@
             </div>
         </div>
 
-        <!-- TAB TIẾN ĐỘ -->
+        <!-- 📊 TAB 7: TIẾN ĐỘ -->
         <div id="progress" class="tab">
             <div class="card">
                 <h2>Tiến độ học tập</h2>
                 <button class="action" onclick="loadProgress()">🔄 Tải tiến độ</button>
+
                 <div class="progress-row" style="margin-top:16px;">
                     <div>
                         <span>Học từ vựng</span>
@@ -114,5 +177,12 @@
                 </div>
             </div>
         </div>
+        
     </div>
 </section>
+@* 
+Scripts {
+    <script src="~/js/main.js"></script>
+} *@
+
+

@@ -1,0 +1,26 @@
+﻿@{
+    ViewData["Title"] = "Flashcard Practice";
+}
+
+<div class="practice-container">
+    <div class="practice-header">
+        <h1>Luyện tập Flashcards</h1>
+        <p>Ôn tập lại flashcards của bạn và đánh giá độ khó</p>
+    </div>
+
+    <div class="practice-start">
+        <form asp-action="StartPractice" method="post">
+            <button type="submit" class="btn btn-success btn-start-practice">
+                Bắt đầu luyện tập
+            </button>
+        </form>
+    </div>
+
+    <div class="practice-info">
+        <h3>Hướng dẫn luyện tập:</h3>
+        <ul>
+            <li>Ôn tập lại 10 flashcards bất kì và đánh giá độ khó của chúng</li>
+            <li>Sau đó sẽ luyện tập bổ sung với những từ được đánh giá Trung bình hoặc Khó </li>
+        </ul>
+    </div>
+</div>

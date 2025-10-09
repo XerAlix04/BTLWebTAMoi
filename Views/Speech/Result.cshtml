@@ -1,0 +1,14 @@
+﻿@{
+    Layout = null;
+    ViewData["Title"] = "Kết quả phát âm";
+}
+
+<h2>Kết quả phát âm</h2>
+<div>
+    @Html.Raw(ViewBag.ScoreResult)
+</div>
+
+<h3>Nghe lại bản ghi:</h3>
+<audio controls>
+    <source src="@ViewBag.AudioFile" type="audio/wav">
+</audio>

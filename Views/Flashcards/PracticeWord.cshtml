@@ -1,0 +1,153 @@
+﻿@model Project1.Models.ViewModels.PracticeWord
+@{
+    ViewData["Title"] = "Practice";
+    var session = Context.Session.GetString("PracticeSession");
+    var practiceSession = session != null ?
+        System.Text.Json.JsonSerializer.Deserialize<Project1.Models.ViewModels.PracticeSessionVM>(session) : null;
+}
+
+<!-- DEBUG INFORMATION - Remove this after fixing -->
+<div style="background: #f8f9fa; padding: 10px; margin-bottom: 20px; border-radius: 5px; font-size: 12px;">
+    <strong>Debug Info:</strong><br />
+    Session: @(practiceSession != null ? "Exists" : "Null")<br />
+    Current Phase: @(practiceSession?.CurrentPhase)<br />
+    Remaining Words: @(practiceSession?.RemainingWords.Count ?? 0)<br />
+    Exercise Type: @(Model?.ExerciseType)<br />
+    Choices Count: @(Model?.Choices?.Count ?? 0)<br />
+    Word: @(Model?.Word?.Tu)<br />
+    Meaning: @(Model?.Word?.Nghia)
+</div>
+
+<div class="practice-word-container">
+    <div class="progress-section">
+        <div class="progress">
+            @if (practiceSession != null)
+            {
+                var progress = practiceSession.CurrentPhase == Project1.Models.ViewModels.PracticePhase.InitialReview ?
+                (practiceSession.CompletedWords.Count * 100) / practiceSession.TotalWords :
+                (practiceSession.CompletedWords.Count * 100) / (practiceSession.TotalWords + practiceSession.RemainingWords.Count);
+                <div class="progress-bar" style="width: @progress%"></div>
+            }
+        </div>
+        @* <div class="progress-text">
+            @if (practiceSession != null)
+            {
+                if (practiceSession.CurrentPhase == Project1.ViewModels.PracticePhase.InitialReview)
+                {
+                    <span>Word @(practiceSession.CompletedWords.Count + 1) of @practiceSession.TotalWords</span>
+                }
+                else
+                {
+                    <span>Exercise @(practiceSession.CompletedWords.Count - practiceSession.TotalWords + 1) of @practiceSession.RemainingWords.Count</span>
+                }
+            }
+        </div> *@
+    </div>
+
+    @if (practiceSession?.CurrentPhase == Project1.Models.ViewModels.PracticePhase.InitialReview)
+    {
+        <div class="flashcard-review">
+            <div class="flashcard">
+                <h2 class="word">@Model.Word.Tu</h2>
+                <p class="meaning">@Model.Word.Nghia</p>
+                @if (!string.IsNullOrEmpty(Model.Word.HinhAnh))
+                {
+                    <img src="@Model.Word.HinhAnh" alt="@Model.Word.Tu" class="word-image" />
+                }
+            </div>
+
+            <div class="difficulty-buttons">
+                @* <h3>How difficult was this word?</h3> *@
+                <div class="button-group">
+                    <form asp-action="SubmitDifficulty" method="post" class="d-inline">
+                        <input type="hidden" name="difficulty" value="Easy" />
+                        <button type="submit" class="btn btn-success btn-difficulty">Dễ</button>
+                    </form>
+                    <form asp-action="SubmitDifficulty" method="post" class="d-inline">
+                        <input type="hidden" name="difficulty" value="Medium" />
+                        <button type="submit" class="btn btn-warning btn-difficulty">Trung bình</button>
+                    </form>
+                    <form asp-action="SubmitDifficulty" method="post" class="d-inline">
+                        <input type="hidden" name="difficulty" value="Hard" />
+                        <button type="submit" class="btn btn-danger btn-difficulty">Khó</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    }
+    else if (practiceSession?.CurrentPhase == Project1.Models.ViewModels.PracticePhase.Exercises)
+    {
+        <div class="exercise-section">
+            @if (Model.ExerciseType == Project1.Models.ViewModels.ExerciseType.MultipleChoice)
+            {
+                <div class="multiple-choice-exercise">
+                    <h3>@* What is the meaning of  *@"<strong>@Model.Word.Tu</strong>"@* ? *@</h3>
+                    @if (Model.Choices == null || !Model.Choices.Any())
+                    {
+                        <div class="alert alert-warning">
+                            <p>No choices available for this word. Using fallback options.</p>
+                        </div>
+                        <!-- Fallback choices -->
+                        <form asp-action="SubmitExerciseAnswer" method="post">
+                            <input type="hidden" name="wordId" value="@Model.Word.MaTu" />
+                            <div class="choices">
+                                <label class="choice-item">
+                                    <input type="radio" name="answer" value="@Model.Word.Nghia" required />
+                                    <span class="choice-text">@Model.Word.Nghia</span>
+                                </label>
+                                <label class="choice-item">
+                                    <input type="radio" name="answer" value="Không biết" required />
+                                    <span class="choice-text">Không biết</span>
+                                </label>
+                                <label class="choice-item">
+                                    <input type="radio" name="answer" value="Cần tra cứu" required />
+                                    <span class="choice-text">Cần tra cứu</span>
+                                </label>
+                                <label class="choice-item">
+                                    <input type="radio" name="answer" value="Chưa học" required />
+                                    <span class="choice-text">Chưa học</span>
+                                </label>
+                            </div>
+                            <button type="submit" class="btn btn-primary mt-3">Nhập câu trả lời</button>
+                        </form>
+                    }
+                    else {
+                        <form asp-action="SubmitExerciseAnswer" method="post">
+                            <input type="hidden" name="wordId" value="@Model.Word.MaTu" />
+                            <div class="choices">
+                                @foreach (var choice in Model.Choices)
+                                {
+                                    <label class="choice-item">
+                                        <input type="radio" name="answer" value="@choice" required />
+                                        <span class="choice-text">@choice</span>
+                                    </label>
+                                }
+                            </div>
+                            <button type="submit" class="btn btn-primary mt-3">Nhập câu trả lời</button>
+                        </form>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="fill-blank-exercise">
+                    <h3>Điền từ vào chỗ trống:</h3>
+                    @{
+                        var example = Model.Word.ViDu ?? "";
+                        var word = Model.Word.Tu;
+                        var meaning = Model.Word.Nghia;
+                        var blankExample = example.Replace(word, "__________");
+                    }
+                    <form asp-action="SubmitExerciseAnswer" method="post">
+                        <input type="hidden" name="wordId" value="@Model.Word.MaTu" />
+                        <p class="meaning">@meaning</p>
+                        <p class="example-sentence">@blankExample</p>
+                        <input type="text" name="answer" placeholder="Điền từ vào chỗ trống..." class="form-control" required />
+                        <button type="submit" class="btn btn-primary mt-2">Nhập câu trả lời</button>
+                    </form>
+                </div>
+            }
+        </div>
+    }
+</div>
+

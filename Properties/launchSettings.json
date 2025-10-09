@@ -20,11 +20,12 @@
     },
     "https": {
       "commandName": "Project",
-      "dotnetRunMessages": true,
+      "dotnetRunMessages": false ,
       "launchBrowser": true,
-      "applicationUrl": "https://localhost:7290;http://localhost:5219",
+      "applicationUrl": "https://localhost:7290;http://localhost:5290",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_BROWSER_TOOLS": "false"
       }
     },
     "IIS Express": {

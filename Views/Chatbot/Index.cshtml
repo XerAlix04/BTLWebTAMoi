@@ -1,0 +1,135 @@
+﻿@using Project1.Models.ViewModels
+@{
+    ViewData["Title"] = "English Assistant Chatbot";
+    var chatSession = ViewBag.ChatSession as ChatSession ?? new ChatSession();
+}
+
+<div class="chatbot-container">
+    <div class="chatbot-header">
+        <h2>Chatbot hỗ trợ tiếng Anh</h2>
+        <p class="subtitle">Luyện tập giao tiếp tiếng Anh với trợ lý AI</p>
+
+        <div class="chat-controls">
+            <form method="post" asp-action="ClearChat" class="d-inline">
+                <button type="submit" class="btn btn-outline-danger btn-sm"
+                        onclick="return confirm('Bạn có muốn xóa hết tin nhắn không')">
+                    🗑️ Clear Chat
+                </button>
+            </form>
+            <form method="post" asp-action="ExportChat" class="d-inline">
+                <button type="submit" class="btn btn-outline-success btn-sm">
+                    📥 Export Chat
+                </button>
+            </form>
+            <span class="message-count">
+                💬 @chatSession.Messages.Count messages
+            </span>
+        </div>
+    </div>
+
+    @if (TempData["Message"] != null)
+    {
+        <div class="alert alert-info alert-dismissible fade show" role="alert">
+            @TempData["Message"]
+            <button type="button" class="close" data-dismiss="alert">
+                <span>&times;</span>
+            </button>
+        </div>
+    }
+
+    <div class="user-info-card">
+        <h4>Thông tin người dùng</h4>
+        <form method="post" asp-action="UpdateUserInfo" class="user-info-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="username">Họ tên</label>
+                    <input type="text" id="username" name="username"
+                           placeholder="Nhập tên của bạn" value="@chatSession.Username"
+                           class="form-control" required />
+                </div>
+                <div class="form-group">
+                    <label for="gender">Giới tính</label>
+                    <select id="gender" name="gender" class="form-control" required>
+                        <option value="">Chọn giới tính</option>
+                        <option value="Male" selected="@(chatSession.Gender == "Male" ? "selected" : null)">Nam</option>
+                        <option value="Female" selected="@(chatSession.Gender == "Female" ? "selected" : null)">Nữ</option>
+                        <option value="Other" selected="@(chatSession.Gender == "Other" ? "selected" : null)">Khác</option>
+                    </select>
+                </div>
+                <div class="form-group" style="align-self: flex-end;">
+                    <button type="submit" class="btn btn-outline-primary">Cập nhật thông tin</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class="chat-interface">
+        <div class="chat-messages" id="chatMessages">
+            @if (chatSession.Messages.Any())
+            {
+                <div class="system-message">
+                    <div class="message-content">
+                        <div class="message-text">
+                            💬 Cuộc trò chuyện bắt đầu ngày @chatSession.CreatedAt.ToString("dd MM, yyyy 'lúc' HH:mm")
+                        </div>
+                    </div>
+                </div>
+
+                foreach (var message in chatSession.Messages)
+                {
+                    <div class="message @(message.MessageType == "user" ? "user-message" : "bot-message")">
+                        <div class="message-avatar">
+                            @if (message.MessageType == "user")
+                            {
+                                <text>👤</text>
+                            }
+                            else
+                            {
+                                <text>🤖</text>
+                            }
+                        </div>
+                        <div class="message-content">
+                            <div class="message-sender">@message.Sender</div>
+                            <div class="message-text">@message.Message</div>
+                            <div class="message-time">@message.Timestamp.ToString("HH:mm")</div>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="empty-chat">
+                    <div class="empty-icon">💬</div>
+                    <h4>Chưa có tin nhắn nào</h4>
+                    <p>Gửi tin nhắn để bắt đầu trò chuyện!</p>
+                </div>
+            }
+        </div>
+
+        <form method="post" class="chat-input-form">
+            <input type="hidden" name="username" value="@chatSession.Username" />
+            <input type="hidden" name="gender" value="@chatSession.Gender" />
+            <div class="input-group">
+                <input type="text" name="userQuestion"
+                       placeholder="Hỏi tôi bất cứ điều gì về tiếng Anh..."
+                       class="form-control chat-input"
+                       required id="chatInput" />
+                <button type="submit" class="btn btn-primary send-button">
+                    <span class="send-icon">📤</span> Gửi
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="chat-suggestions">
+        <h5>💡 Thử hỏi:</h5>
+        <div class="suggestion-chips">
+            <button type="button" class="suggestion-chip" data-question="Tôi có thể làm gì để cải thiện khả năng phát âm?">Bí kíp phát âm</button>
+            <button type="button" class="suggestion-chip" data-question="Khác biệt giữa 'make' và 'do' là gì?">Hỗ trợ ngữ pháp</button>
+            <button type="button" class="suggestion-chip" data-question="Bạn có thể cho tôi vài ví dụ để luyện tập giao tiếp không?">Luyện tập giao tiếp</button>
+            <button type="button" class="suggestion-chip" data-question="Giải thích cho tôi về thì hiện tại đơn">Giải thích thì</button>
+        </div>
+    </div>
+</div>
+
+

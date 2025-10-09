@@ -1,0 +1,38 @@
+﻿@model Project1.Models.ViewModels.PracticeSessionVM
+@{
+    ViewData["Title"] = "Practice Complete";
+}
+
+<div class="practice-complete-container">
+    <div class="completion-message">
+        <h1>🎉 Hoàn thành luyện tập!</h1>
+        <p>Bạn đã hoàn thành buổi luyện tập flashcards.</p>
+    </div>
+
+    <div class="session-summary">
+        <h3>Session Summary</h3>
+        <div class="summary-stats">
+            <div class="stat">
+                <span class="stat-number">@Model.CompletedWords.Count(w => w.Difficulty == "Easy")</span>
+                <span class="stat-label">Easy</span>
+            </div>
+            <div class="stat">
+                <span class="stat-number">@Model.CompletedWords.Count(w => w.Difficulty == "Medium")</span>
+                <span class="stat-label">Medium</span>
+            </div>
+            <div class="stat">
+                <span class="stat-number">@Model.CompletedWords.Count(w => w.Difficulty == "Hard")</span>
+                <span class="stat-label">Hard</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="completion-actions">
+        <a href="@Url.Action("Index", "Flashcards")" class="btn btn-primary">
+            Quay lại Flashcards
+        </a>
+        <a href="@Url.Action("Practice", "Flashcards")" class="btn btn-outline-primary">
+            Tiếp tục luyện tập
+        </a>
+    </div>
+</div>

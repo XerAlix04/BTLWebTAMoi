@@ -1,0 +1,90 @@
+﻿@using Project1.Models.ViewModels
+@model ApiPagedResponse<Project1.Models.ViewModels.TuVungVM>
+@{
+    ViewData["Title"] = "My Flashcards";
+}
+
+<div class="flashcards-container">
+    <div class="header-section">
+        <h1>My Flashcards</h1>
+        <a href="@Url.Action("Practice", "Flashcards")" class="btn btn-primary btn-practice">
+            Luyện tập Flashcards
+        </a>
+    </div>
+
+    <div class="flashcards-grid">
+        @foreach (var card in Model.Items)
+        {
+            <div class="flashcard-item">
+                <a href="@Url.Action("View", "Flashcards", new { id = card.MaTu })" class="flashcard-link">
+                    <div class="flashcard-content">
+                        <h3>@card.Tu</h3>
+                        <p class="meaning">@card.Nghia</p>
+                        @if (!string.IsNullOrEmpty(card.HinhAnh))
+                        {
+                            <img src="@card.HinhAnh" alt="@card.Tu" class="flashcard-image" />
+                        }
+                    </div>
+                </a>
+                <div class="flashcard-actions">
+                    <form asp-action="Remove" method="post" class="d-inline">
+                        <input type="hidden" name="tuVungId" value="@card.MaTu" />
+                        <button type="submit" class="btn btn-sm btn-outline-danger"
+                                onclick="return confirm('Bạn có chắc chắn muốn xóa flashcard này không?')">
+                            Xóa
+                        </button>
+                    </form>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Pagination -->
+    <nav aria-label="Flashcard pages">
+        <ul class="pagination justify-content-center">
+            @if (Model.Page > 1)
+            {
+                <li class="page-item">
+                    <a class="page-link"
+                       href="@Url.Action("Index", new { page = Model.Page - 1, pageSize = Model.PageSize })">
+                        Previous
+                    </a>
+                </li>
+            }
+
+            @for (int i = 1; i <= Model.TotalPages; i++)
+            {
+                <li class="page-item @(i == Model.Page ? "active" : "")">
+                    <a class="page-link"
+                       href="@Url.Action("Index", new { page = i, pageSize = Model.PageSize })">
+                        @i
+                    </a>
+                </li>
+            }
+
+            @if (Model.Page < Model.TotalPages)
+            {
+                <li class="page-item">
+                    <a class="page-link"
+                       href="@Url.Action("Index", new { page = Model.Page + 1, pageSize = Model.PageSize })">
+                        Next
+                    </a>
+                </li>
+            }
+        </ul>
+    </nav>
+
+    <div class="pagination-info text-center">
+        <small class="text-muted">
+            Trang @Model.Page trên @Model.TotalPages - Hiện @Model.Items.Count() trên @Model.TotalCount flashcards
+        </small>
+    </div>
+
+    @if (!Model.Items.Any())
+    {
+        <div class="empty-state">
+            <p>Chưa có flashcard nào. Hãy thêm từ mới để bắt đầu học!</p>
+        </div>
+    }
+</div>
+
