@@ -19,31 +19,67 @@ namespace Project1.Controllers
             _logger = logger;
         }
 
-        // For demo, use a fixed user ID. Replace with actual authentication.
-        private int GetUserId() => 2;
+        // Get the actual logged-in user ID from session
+        private int GetUserId()
+        {
+            var userId = HttpContext.Session.GetInt32("UserId");
+            if (userId == null || userId == 0)
+            {
+                // For demo purposes, you might want to handle this differently
+                // You could throw an exception or return a default value
+                _logger.LogWarning("No user ID found in session. Using demo user ID 2.");
+                return 2; // Fallback for demo
+            }
+            return userId.Value;
+        }
 
         [HttpGet("all")]
         public async Task<ActionResult<ApiResponse<List<TuVungVM>>>> GetAllUserFlashcards()
         {
-            var userId = GetUserId();
-            var flashcards = await _context.NguoiDungTuVungs
-                .Where(x => x.MaNguoiDung == userId)
-                .Include(x => x.MaTuNavigation)
-                .Select(x => new TuVungVM
-                {
-                    MaTu = (int)x.MaTu,
-                    Tu = x.MaTuNavigation.Tu,
-                    Nghia = x.MaTuNavigation.Nghia,
-                    HinhAnh = x.MaTuNavigation.DuongDanAnh,
-                    ViDu = x.MaTuNavigation.ViDu
-                })
-                .ToListAsync();
-
-            return Ok(new ApiResponse<List<TuVungVM>>
+            try
             {
-                Success = true,
-                Data = flashcards
-            });
+                var userId = GetUserId();
+                _logger.LogInformation($"Getting flashcards for user ID: {userId}");
+
+                var flashcards = await _context.NguoiDungTuVungs
+                    .Where(x => x.MaNguoiDung == userId)
+                    .Include(x => x.MaTuNavigation)
+                    .Select(x => new TuVungVM
+                    {
+                        MaTu = (int)x.MaTu,
+                        Tu = x.MaTuNavigation.Tu ?? "No word", // Add null check
+                        Nghia = x.MaTuNavigation.Nghia ?? "No word", // Add null check
+                        HinhAnh = x.MaTuNavigation.DuongDanAnh,
+                        ViDu = x.MaTuNavigation.ViDu
+                    })
+                    .ToListAsync();
+
+                _logger.LogInformation($"Found {flashcards.Count} flashcards for user {userId}");
+
+                // Log first few items to see actual data
+                if (flashcards.Any())
+                {
+                    for (int i = 0; i < Math.Min(3, flashcards.Count); i++)
+                    {
+                        _logger.LogInformation($"Flashcard {i}: MaTu={flashcards[i].MaTu}, Tu={flashcards[i].Tu}, Nghia={flashcards[i].Nghia}");
+                    }
+                }
+
+                return Ok(new ApiResponse<List<TuVungVM>>
+                {
+                    Success = true,
+                    Data = flashcards
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting user flashcards");
+                return StatusCode(500, new ApiResponse<List<TuVungVM>>
+                {
+                    Success = false,
+                    Message = "Internal server error"
+                });
+            }
         }
 
         [HttpGet]

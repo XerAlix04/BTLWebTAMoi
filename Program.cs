@@ -18,10 +18,11 @@ builder.Services.AddSession(options =>
     options.Cookie.HttpOnly = true; // cookie chỉ đọc bằng server
     options.Cookie.IsEssential = true; // bắt buộc cookie hoạt động
 });
-builder.Services.AddDbContext<WebTaContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddControllersWithViews();
+
+builder.Services.AddDbContext<WebTaContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddScoped<ChatbotApiService>();
 builder.Services.AddScoped<FlashcardsService>();

@@ -516,3 +516,628 @@ if (btn) btn.addEventListener("click", loadRandomWord);
 
 // Tải từ đầu tiên khi mở tab
 loadRandomWord();
+
+
+// ======================
+// FLASHCARDS FUNCTIONALITY
+// ======================
+
+let flashcards = [];
+let practiceSession = null;
+let currentPracticeWord = null;
+let selectedChoice = null;
+
+// Load user's flashcards
+async function loadFlashcards() {
+    try {
+        const response = await fetch('/api/FlashcardsAPI/all', {
+            method: 'GET',
+            credentials: 'include' // This is important for sending session cookies
+        });
+        if (!response.ok) throw new Error('Không thể tải flashcards');
+
+        const result = await response.json();
+        console.log('Raw API response:', result); // Add this line
+        console.log('Flashcards data:', result.data); // Add this line
+
+        if (result.success) {
+            flashcards = result.data;
+            displayFlashcards();
+        } else {
+            throw new Error(result.message);
+        }
+    } catch (error) {
+        console.error('Error loading flashcards:', error);
+        alert('Lỗi khi tải flashcards: ' + error.message);
+    }
+}
+
+// Display flashcards in grid
+function displayFlashcards() {
+    const grid = document.getElementById('flashcardsGrid');
+    const emptyState = document.getElementById('emptyFlashcards');
+
+    console.log('Displaying flashcards:', flashcards);
+
+    if (!flashcards || flashcards.length === 0) {
+        grid.style.display = 'none';
+        emptyState.style.display = 'block';
+        return;
+    }
+
+    grid.style.display = 'grid';
+    emptyState.style.display = 'none';
+
+    try {
+        grid.innerHTML = flashcards.map((card, index) => {
+            console.log(`Card ${index}:`, card);
+
+            // Use camelCase properties (what the API actually returns)
+            const word = card.tu || 'Không có từ';
+            const meaning = card.nghia || 'Không có nghĩa';
+            const image = card.hinhAnh || '';
+            const example = card.viDu || '';
+            const id = card.maTu || index;
+
+            return `
+                <div class="flashcard-item">
+                    <div class="flashcard-content">
+                        <h3>${word}</h3>
+                        <p class="meaning">${meaning}</p>
+                        ${image ? `<img src="${image}" alt="${word}" class="flashcard-image" />` : ''}
+                        ${example ? `<p class="example"><small>VD: ${example}</small></p>` : ''}
+                    </div>
+                    <div class="flashcard-actions">
+                        <button class="action" onclick="removeFlashcard(${id})">🗑️ Xóa</button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    } catch (error) {
+        console.error('Error rendering flashcards:', error);
+        grid.innerHTML = '<div class="error">Lỗi hiển thị flashcards</div>';
+    }
+}
+
+// Remove flashcard
+async function removeFlashcard(tuVungId) {
+    if (!confirm('Bạn có chắc chắc muốn xóa flashcard này?')) return;
+
+    try {
+        const response = await fetch(`/api/FlashcardsAPI/${tuVungId}`, {
+            method: 'DELETE',
+            credentials: 'include' // Include credentials here too
+        });
+
+        if (response.ok) {
+            await loadFlashcards(); // Reload the list
+        } else {
+            throw new Error('Xóa thất bại');
+        }
+    } catch (error) {
+        console.error('Error removing flashcard:', error);
+        alert('Lỗi khi xóa flashcard: ' + error.message);
+    }
+}
+
+// Start practice session
+async function startPractice() {
+    if (flashcards.length === 0) {
+        await loadFlashcards();
+    }
+
+    if (flashcards.length === 0) {
+        alert('Bạn cần có ít nhất một flashcard để bắt đầu luyện tập!');
+        return;
+    }
+
+    practiceSession = {
+        allFlashcards: [...flashcards],
+        remainingWords: [],
+        completedWords: [],
+        currentPhase: 'InitialReview',
+        totalWords: Math.min(10, flashcards.length)
+    };
+
+    // Select random words for practice
+    const randomWords = [...flashcards]
+        .sort(() => Math.random() - 0.5)
+        .slice(0, practiceSession.totalWords);
+
+    practiceSession.remainingWords = randomWords.map(word => ({
+        word: word,
+        difficulty: null
+    }));
+
+    document.getElementById('practiceSection').style.display = 'block';
+    document.getElementById('flashcardsGrid').style.display = 'none';
+
+    showNextPracticeWord();
+}
+
+// Show next practice word
+function showNextPracticeWord() {
+    if (practiceSession.remainingWords.length === 0) {
+        if (practiceSession.currentPhase === 'InitialReview') {
+            setupExercises();
+        } else {
+            finishPractice();
+        }
+        return;
+    }
+
+    currentPracticeWord = practiceSession.remainingWords[0];
+
+    const progress = practiceSession.currentPhase === 'InitialReview'
+        ? ((practiceSession.completedWords.length * 100) / practiceSession.totalWords)
+        : ((practiceSession.completedWords.length * 100) / (practiceSession.totalWords + practiceSession.remainingWords.length));
+
+    document.getElementById('practiceProgress').style.width = progress + '%';
+    document.getElementById('progressText').textContent =
+        `${practiceSession.completedWords.length} / ${practiceSession.totalWords}`;
+
+    if (practiceSession.currentPhase === 'InitialReview') {
+        showFlashcardReview();
+    } else {
+        showExercise();
+    }
+}
+
+// Show flashcard for review
+function showFlashcardReview() {
+    document.getElementById('flashcardReview').style.display = 'block';
+    document.getElementById('exerciseSection').style.display = 'none';
+
+    document.getElementById('practiceWord').textContent = currentPracticeWord.word.Tu;
+    document.getElementById('practiceMeaning').textContent = currentPracticeWord.word.Nghia;
+    document.getElementById('practiceMeaning').style.display = 'none';
+
+    const imageEl = document.getElementById('practiceImage');
+    if (currentPracticeWord.word.HinhAnh) {
+        imageEl.src = currentPracticeWord.word.HinhAnh;
+        imageEl.style.display = 'block';
+    } else {
+        imageEl.style.display = 'none';
+    }
+}
+
+// Submit difficulty rating
+function submitDifficulty(difficulty) {
+    currentPracticeWord.difficulty = difficulty;
+    practiceSession.completedWords.push(currentPracticeWord);
+    practiceSession.remainingWords.shift();
+
+    showNextPracticeWord();
+}
+
+// Setup exercises after initial review
+function setupExercises() {
+    practiceSession.currentPhase = 'Exercises';
+    const mediumHardWords = practiceSession.completedWords
+        .filter(w => w.difficulty === 'Medium' || w.difficulty === 'Hard')
+        .map(w => w.word);
+
+    if (mediumHardWords.length === 0) {
+        mediumHardWords.push(...practiceSession.completedWords
+            .slice(0, Math.min(3, practiceSession.completedWords.length))
+            .map(w => w.word));
+    }
+
+    practiceSession.remainingWords = mediumHardWords.map(word => ({
+        word: word,
+        exerciseType: word.ViDu ? (Math.random() > 0.5 ? 'MultipleChoice' : 'FillInBlank') : 'MultipleChoice',
+        choices: generateMultipleChoiceOptions(word, mediumHardWords),
+        userAnswer: null
+    }));
+
+    showNextPracticeWord();
+}
+
+// Generate multiple choice options
+function generateMultipleChoiceOptions(correctWord, allWords) {
+    const options = [correctWord.Nghia];
+    const otherWords = allWords.filter(w => w.MaTu !== correctWord.MaTu);
+    const usedMeanings = new Set([correctWord.Nghia]);
+
+    while (options.length < 4 && otherWords.length > 0) {
+        const randomWord = otherWords[Math.floor(Math.random() * otherWords.length)];
+        if (!usedMeanings.has(randomWord.Nghia)) {
+            options.push(randomWord.Nghia);
+            usedMeanings.add(randomWord.Nghia);
+        }
+    }
+
+    // Add generic options if needed
+    const genericOptions = ['không biết', 'cần tra cứu', 'chưa học'];
+    while (options.length < 4) {
+        const genericOption = genericOptions[options.length - 1];
+        if (!usedMeanings.has(genericOption)) {
+            options.push(genericOption);
+            usedMeanings.add(genericOption);
+        }
+    }
+
+    return options.sort(() => Math.random() - 0.5);
+}
+
+// Show exercise
+function showExercise() {
+    document.getElementById('flashcardReview').style.display = 'none';
+    document.getElementById('exerciseSection').style.display = 'block';
+
+    selectedChoice = null;
+
+    if (currentPracticeWord.exerciseType === 'MultipleChoice') {
+        showMultipleChoiceExercise();
+    } else {
+        showFillInBlankExercise();
+    }
+}
+
+// Show multiple choice exercise
+function showMultipleChoiceExercise() {
+    document.getElementById('multipleChoiceExercise').style.display = 'block';
+    document.getElementById('fillBlankExercise').style.display = 'none';
+
+    document.getElementById('mcWord').textContent = currentPracticeWord.word.Tu;
+
+    const choicesContainer = document.getElementById('choicesContainer');
+    choicesContainer.innerHTML = currentPracticeWord.choices.map((choice, index) => `
+            <div class="choice-item" onclick="selectChoice(this, '${choice}')">
+                ${String.fromCharCode(65 + index)}. ${choice}
+            </div>
+        `).join('');
+}
+
+// Show fill in blank exercise
+function showFillInBlankExercise() {
+    document.getElementById('multipleChoiceExercise').style.display = 'none';
+    document.getElementById('fillBlankExercise').style.display = 'block';
+
+    document.getElementById('fillMeaning').textContent = currentPracticeWord.word.Nghia;
+
+    const example = currentPracticeWord.word.ViDu || '';
+    const word = currentPracticeWord.word.Tu;
+    const blankExample = example.replace(new RegExp(word, 'gi'), '__________');
+    document.getElementById('fillExample').textContent = blankExample;
+
+    document.getElementById('fillAnswer').value = '';
+}
+
+// Select choice in multiple choice
+function selectChoice(element, choice) {
+    document.querySelectorAll('.choice-item').forEach(item => {
+        item.classList.remove('selected');
+    });
+    element.classList.add('selected');
+    selectedChoice = choice;
+}
+
+// Submit exercise answer
+function submitExerciseAnswer() {
+    if (!selectedChoice) {
+        alert('Vui lòng chọn một đáp án!');
+        return;
+    }
+
+    currentPracticeWord.userAnswer = selectedChoice;
+    practiceSession.completedWords.push(currentPracticeWord);
+    practiceSession.remainingWords.shift();
+
+    showNextPracticeWord();
+}
+
+// Submit fill in blank answer
+function submitFillAnswer() {
+    const answer = document.getElementById('fillAnswer').value.trim();
+    if (!answer) {
+        alert('Vui lòng điền từ vào chỗ trống!');
+        return;
+    }
+
+    currentPracticeWord.userAnswer = answer;
+    practiceSession.completedWords.push(currentPracticeWord);
+    practiceSession.remainingWords.shift();
+
+    showNextPracticeWord();
+}
+
+// Finish practice
+function finishPractice() {
+    document.getElementById('practiceSection').style.display = 'none';
+    document.getElementById('practiceComplete').style.display = 'block';
+
+    const easyCount = practiceSession.completedWords.filter(w => w.difficulty === 'Easy').length;
+    const mediumCount = practiceSession.completedWords.filter(w => w.difficulty === 'Medium').length;
+    const hardCount = practiceSession.completedWords.filter(w => w.difficulty === 'Hard').length;
+
+    document.getElementById('practiceSummary').innerHTML = `
+            <div style="display: flex; justify-content: center; gap: 20px; margin: 20px 0;">
+                <div class="stat">
+                    <span class="stat-number">${easyCount}</span>
+                    <span class="stat-label">Dễ</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number">${mediumCount}</span>
+                    <span class="stat-label">Trung bình</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number">${hardCount}</span>
+                    <span class="stat-label">Khó</span>
+                </div>
+            </div>
+        `;
+}
+
+// Reset practice
+function resetPractice() {
+    document.getElementById('practiceComplete').style.display = 'none';
+    document.getElementById('flashcardsGrid').style.display = 'grid';
+    practiceSession = null;
+    currentPracticeWord = null;
+}
+
+// ======================
+// CHATBOT FUNCTIONALITY
+// ======================
+
+let chatSession = {
+    username: '',
+    gender: '',
+    messages: []
+};
+
+// Initialize chatbot
+function initializeChatbot() {
+    // Load saved session from localStorage
+    const savedSession = localStorage.getItem('chatSession');
+    if (savedSession) {
+        chatSession = JSON.parse(savedSession);
+        updateChatDisplay();
+    }
+}
+
+// Update user info
+function updateUserInfo() {
+    const username = document.getElementById('username').value.trim();
+    const gender = document.getElementById('gender').value;
+
+    if (!username || !gender) {
+        alert('Vui lòng điền đầy đủ thông tin!');
+        return;
+    }
+
+    chatSession.username = username;
+    chatSession.gender = gender;
+    saveChatSession();
+    alert('Thông tin đã được cập nhật!');
+}
+
+// Send chat message
+async function sendChatMessage() {
+    const input = document.getElementById('chatInput');
+    const message = input.value.trim();
+
+    if (!message) {
+        alert('Vui lòng nhập tin nhắn!');
+        return;
+    }
+
+    if (!chatSession.username || !chatSession.gender) {
+        alert('Vui lòng cập nhật thông tin người dùng trước!');
+        return;
+    }
+
+    // Add user message
+    addMessageToChat('user', chatSession.username, message);
+    input.value = '';
+
+    // Show typing indicator
+    const typingIndicator = addMessageToChat('bot', 'English Assistant', 'Đang trả lời...');
+
+    try {
+        // Prepare payload for API
+        const payload = {
+            ChatHistory: chatSession.messages
+                .filter(m => m.MessageType === 'user' || m.MessageType === 'bot')
+                .map(m => ({
+                    FromUser: m.MessageType === 'user',
+                    Message: m.Message
+                })),
+            Question: message,
+            ImagesAsBase64: []
+        };
+
+        // Call chatbot API
+        const response = await fetch('/Chatbot/Index', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+                userQuestion: message,
+                username: chatSession.username,
+                gender: chatSession.gender
+            })
+        });
+
+        if (!response.ok) throw new Error('Network response was not ok');
+
+        const responseText = await response.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(responseText, 'text/html');
+
+        // Extract bot answer (this is a simplified approach)
+        // In a real implementation, you'd want to use a proper API endpoint
+        let botAnswer = "Xin lỗi, tôi không thể xử lý câu hỏi ngay lúc này. Vui lòng thử lại sau.";
+
+        // Remove typing indicator
+        typingIndicator.remove();
+
+        // Add bot response
+        addMessageToChat('bot', 'English Assistant', botAnswer);
+
+    } catch (error) {
+        console.error('Chat error:', error);
+        typingIndicator.remove();
+        addMessageToChat('bot', 'English Assistant', 'Xin lỗi, đã có lỗi xảy ra. Vui lòng thử lại!');
+    }
+}
+
+// Add message to chat display
+function addMessageToChat(messageType, sender, message) {
+    const chatMessages = document.getElementById('chatMessages');
+
+    // Remove empty state if it exists
+    const emptyChat = chatMessages.querySelector('.empty-chat');
+    if (emptyChat) {
+        emptyChat.remove();
+    }
+
+    const messageElement = document.createElement('div');
+    messageElement.className = `message ${messageType === 'user' ? 'user-message' : 'bot-message'}`;
+
+    messageElement.innerHTML = `
+            <div class="message-avatar">
+                ${messageType === 'user' ? '👤' : '🤖'}
+            </div>
+            <div class="message-content">
+                <div class="message-sender">${sender}</div>
+                <div class="message-text">${message}</div>
+                <div class="message-time">${new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</div>
+            </div>
+        `;
+
+    chatMessages.appendChild(messageElement);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+
+    // Add to session
+    chatSession.messages.push({
+        Sender: sender,
+        Message: message,
+        Timestamp: new Date().toISOString(),
+        MessageType: messageType
+    });
+
+    saveChatSession();
+    updateMessageCount();
+
+    return messageElement;
+}
+
+// Clear chat
+function clearChat() {
+    if (!confirm('Bạn có chắc chắn muốn xóa toàn bộ tin nhắn?')) return;
+
+    chatSession.messages = [];
+    document.getElementById('chatMessages').innerHTML = `
+            <div class="empty-chat" style="text-align: center; color: #666;">
+                <div style="font-size: 48px;">💬</div>
+                <h4>Chưa có tin nhắn nào</h4>
+                <p>Gửi tin nhắn để bắt đầu trò chuyện!</p>
+            </div>
+        `;
+
+    saveChatSession();
+    updateMessageCount();
+}
+
+// Export chat
+function exportChat() {
+    if (chatSession.messages.length === 0) {
+        alert('Không có tin nhắn để xuất!');
+        return;
+    }
+
+    let exportContent = `English Assistant Chatbot - Conversation Export\n`;
+    exportContent += `==============================================\n`;
+    exportContent += `Export Date: ${new Date().toLocaleString('vi-VN')}\n`;
+    exportContent += `User: ${chatSession.username}\n`;
+    exportContent += `Gender: ${chatSession.gender}\n\n`;
+    exportContent += `Conversation History:\n`;
+    exportContent += `-------------------\n\n`;
+
+    chatSession.messages.forEach(message => {
+        const senderLabel = message.MessageType === 'user' ? 'User' : 'Assistant';
+        const time = new Date(message.Timestamp).toLocaleTimeString('vi-VN');
+        exportContent += `[${senderLabel} - ${time}]\n`;
+        exportContent += `${message.Message}\n\n`;
+    });
+
+    const blob = new Blob([exportContent], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `English_Chat_Export_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+// Use suggestion
+function useSuggestion(question) {
+    document.getElementById('chatInput').value = question;
+}
+
+// Save chat session
+function saveChatSession() {
+    localStorage.setItem('chatSession', JSON.stringify(chatSession));
+}
+
+// Update message count
+function updateMessageCount() {
+    document.getElementById('messageCount').textContent =
+        `💬 ${chatSession.messages.length} tin nhắn`;
+}
+
+// Update chat display
+function updateChatDisplay() {
+    const chatMessages = document.getElementById('chatMessages');
+    chatMessages.innerHTML = '';
+
+    if (chatSession.messages.length === 0) {
+        chatMessages.innerHTML = `
+                <div class="empty-chat" style="text-align: center; color: #666;">
+                    <div style="font-size: 48px;">💬</div>
+                    <h4>Chưa có tin nhắn nào</h4>
+                    <p>Gửi tin nhắn để bắt đầu trò chuyện!</p>
+                </div>
+            `;
+    } else {
+        chatSession.messages.forEach(message => {
+            const messageElement = document.createElement('div');
+            messageElement.className = `message ${message.MessageType === 'user' ? 'user-message' : 'bot-message'}`;
+
+            messageElement.innerHTML = `
+                    <div class="message-avatar">
+                        ${message.MessageType === 'user' ? '👤' : '🤖'}
+                    </div>
+                    <div class="message-content">
+                        <div class="message-sender">${message.Sender}</div>
+                        <div class="message-text">${message.Message}</div>
+                        <div class="message-time">${new Date(message.Timestamp).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</div>
+                    </div>
+                `;
+
+            chatMessages.appendChild(messageElement);
+        });
+    }
+
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    updateMessageCount();
+
+    // Update form fields
+    document.getElementById('username').value = chatSession.username || '';
+    document.getElementById('gender').value = chatSession.gender || '';
+}
+
+// Initialize when page loads
+document.addEventListener('DOMContentLoaded', function () {
+    initializeChatbot();
+
+    // Load flashcards when vocab tab is opened
+    document.querySelector('nav button[onclick*="vocab"]')?.addEventListener('click', function () {
+        setTimeout(loadFlashcards, 100);
+    });
+});
