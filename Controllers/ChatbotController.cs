@@ -56,7 +56,7 @@ namespace Project1.Controllers
                 .ToArray();
 
 
-            var apiKey = _configuration["ChatbotApi:ApiKey"];
+            var apiKey = _configuration["Gemini:ApiKey"];
 
             // Log for debugging (be careful not to log full key in production)
             _logger.LogInformation($"API Key configured: {!string.IsNullOrEmpty(apiKey)}");
