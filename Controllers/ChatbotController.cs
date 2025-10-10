@@ -11,11 +11,13 @@ namespace Project1.Controllers
     {
         private readonly ChatbotApiService _chatbotApiService;
         private readonly IConfiguration _configuration;
+        private readonly ILogger<ChatbotController> _logger;
 
-        public ChatbotController(ChatbotApiService chatbotApiService, IConfiguration configuration)
+        public ChatbotController(ChatbotApiService chatbotApiService, IConfiguration configuration, ILogger<ChatbotController> logger)
         {
             _chatbotApiService = chatbotApiService;
             _configuration = configuration;
+            _logger = logger;
         }
 
         public IActionResult Index()
@@ -55,6 +57,24 @@ namespace Project1.Controllers
 
 
             var apiKey = _configuration["ChatbotApi:ApiKey"];
+
+            // Log for debugging (be careful not to log full key in production)
+            _logger.LogInformation($"API Key configured: {!string.IsNullOrEmpty(apiKey)}");
+
+            if (string.IsNullOrEmpty(apiKey))
+            {
+                _logger.LogError("API Key is null or empty");
+                // Fallback response when API key is missing
+                _chatbotApiService.AddBotMessage("Xin lỗi, dịch vụ chatbot đang được bảo trì. Vui lòng thử lại sau.");
+
+                var chatSessionLocal = _chatbotApiService.GetChatSession();
+                ViewBag.Username = username;
+                ViewBag.Gender = gender;
+                ViewBag.UserQuestion = userQuestion;
+                ViewBag.ChatSession = chatSessionLocal;
+                return View();
+            }
+
             var payload = new
             {
                 ChatHistory = chatHistory,
@@ -71,9 +91,11 @@ namespace Project1.Controllers
 
                 // Parse the JSON response
                 botAnswer = ParseBotResponse(responseJson);
+                _logger.LogInformation("Successfully received response from chatbot API");
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error calling chatbot API");
                 botAnswer = $"Tôi xin lỗi, nhưng đang có vấn đề xử lý yêu cầu của bạn. Error: {ex.Message}";
             }
 

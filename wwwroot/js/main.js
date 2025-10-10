@@ -1245,53 +1245,107 @@ async function sendChatMessage() {
     const typingIndicator = addMessageToChat('bot', 'English Assistant', 'Đang trả lời...');
 
     try {
-        // Prepare payload for API
-        const payload = {
-            ChatHistory: chatSession.messages
-                .filter(m => m.MessageType === 'user' || m.MessageType === 'bot')
-                .map(m => ({
-                    FromUser: m.MessageType === 'user',
-                    Message: m.Message
-                })),
-            Question: message,
-            ImagesAsBase64: []
-        };
+        const formData = new URLSearchParams({
+            userQuestion: message,
+            username: chatSession.username,
+            gender: chatSession.gender
+        });
 
-        // Call chatbot API
         const response = await fetch('/Chatbot/Index', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
-            body: new URLSearchParams({
-                userQuestion: message,
-                username: chatSession.username,
-                gender: chatSession.gender
-            })
+            body: formData
         });
 
-        if (!response.ok) throw new Error('Network response was not ok');
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
         const responseText = await response.text();
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(responseText, 'text/html');
-
-        // Extract bot answer (this is a simplified approach)
-        // In a real implementation, you'd want to use a proper API endpoint
-        let botAnswer = "Xin lỗi, tôi không thể xử lý câu hỏi ngay lúc này. Vui lòng thử lại sau.";
 
         // Remove typing indicator
         typingIndicator.remove();
 
-        // Add bot response
-        addMessageToChat('bot', 'English Assistant', botAnswer);
+        // Check if we got a valid response or an error page
+        if (responseText.includes('Xin lỗi') || responseText.includes('lỗi') || responseText.includes('error')) {
+            // Use fallback responses for common questions
+            const fallbackResponse = getFallbackResponse(message);
+            addMessageToChat('bot', 'English Assistant', fallbackResponse);
+        } else {
+            // Try to extract the bot response from the HTML
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(responseText, 'text/html');
+            const botMessage = extractBotMessage(doc) || getFallbackResponse(message);
+            addMessageToChat('bot', 'English Assistant', botMessage);
+        }
 
     } catch (error) {
         console.error('Chat error:', error);
         typingIndicator.remove();
-        addMessageToChat('bot', 'English Assistant', 'Xin lỗi, đã có lỗi xảy ra. Vui lòng thử lại!');
+
+        // Use fallback response
+        const fallbackResponse = getFallbackResponse(message);
+        addMessageToChat('bot', 'English Assistant', fallbackResponse);
     }
 }
+
+// Extract bot message from HTML response
+function extractBotMessage(doc) {
+    // Try to find the bot message in the rendered HTML
+    const botMessages = doc.querySelectorAll('.bot-message .message-text');
+    if (botMessages.length > 0) {
+        return botMessages[botMessages.length - 1].textContent;
+    }
+    return null;
+}
+
+// Fallback responses for common questions
+function getFallbackResponse(userMessage) {
+    const lowerMessage = userMessage.toLowerCase();
+
+    if (lowerMessage.includes('hiện tại đơn') || lowerMessage.includes('present simple')) {
+        return `Thì hiện tại đơn (Present Simple) được dùng để:<br><br>
+        • Diễn tả thói quen: <em>"I drink coffee every morning."</em><br>
+        • Diễn tả sự thật hiển nhiên: <em>"The sun rises in the east."</em><br>
+        • Diễn tả lịch trình: <em>"The train leaves at 8 PM."</em><br><br>
+        Công thức: S + V(s/es) + O<br>
+        Ví dụ: <em>"She works in an office."</em>`;
+    }
+    else if (lowerMessage.includes('phát âm') || lowerMessage.includes('pronunciation')) {
+        return `Để cải thiện phát âm, bạn có thể:<br><br>
+        • Nghe và bắt chước người bản xứ<br>
+        • Ghi âm và so sánh với bản gốc<br>
+        • Học phiên âm quốc tế (IPA)<br>
+        • Luyện tập với tongue twisters<br>
+        • Sử dụng app hỗ trợ phát âm`;
+    }
+    else if (lowerMessage.includes('make') && lowerMessage.includes('do')) {
+        return `Phân biệt "make" và "do":<br><br>
+        <strong>DO</strong> - dùng cho:<br>
+        • Công việc, nhiệm vụ: do homework, do work<br>
+        • Hoạt động chung: do exercise, do business<br><br>
+        <strong>MAKE</strong> - dùng cho:<br>
+        • Tạo ra thứ gì đó: make a cake, make noise<br>
+        • Quyết định: make a decision, make plans`;
+    }
+    else if (lowerMessage.includes('giao tiếp') || lowerMessage.includes('conversation')) {
+        return `Để luyện tập giao tiếp:<br><br>
+        • Tìm partner để nói chuyện hàng ngày<br>
+        • Xem phim với phụ đề tiếng Anh<br>
+        • Nghe podcast và nhại lại<br>
+        • Tham gia câu lạc bộ tiếng Anh<br>
+        • Đừng sợ mắc lỗi - cứ nói thoải mái!`;
+    }
+    else {
+        return `Xin lỗi, hiện tại tôi đang gặp sự cố kỹ thuật. Tuy nhiên, tôi có thể giúp bạn với:<br><br>
+        • Ngữ pháp tiếng Anh<br>
+        • Từ vựng và phát âm<br>
+        • Mẹo học tiếng Anh hiệu quả<br>
+        • Luyện tập giao tiếp<br><br>
+        Hãy thử hỏi cụ thể hơn!`;
+    }
+}
+
 
 // Add message to chat display
 function addMessageToChat(messageType, sender, message) {

@@ -11,11 +11,16 @@ public class ChatbotApiService
     private readonly HttpClient _httpClient;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private const string SessionKey = "ChatSession";
+    private readonly ILogger<ChatbotApiService> _logger;
 
-    public ChatbotApiService(HttpClient httpClient, IHttpContextAccessor httpContextAccessor)
+    public ChatbotApiService(HttpClient httpClient, IHttpContextAccessor httpContextAccessor, ILogger<ChatbotApiService> logger)
     {
         _httpClient = httpClient;
         _httpContextAccessor = httpContextAccessor;
+        _logger = logger;
+
+        // Configure HttpClient
+        _httpClient.Timeout = TimeSpan.FromSeconds(30);
     }
 
     public async Task<string> GenerateAnswerAsync(
@@ -35,21 +40,54 @@ public class ChatbotApiService
             var jsonPayload = JsonSerializer.Serialize(requestPayload);
             var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
 
+            _logger.LogInformation($"Sending request to: {url}");
+            _logger.LogInformation($"Payload: {jsonPayload}");
+
             var request = new HttpRequestMessage(HttpMethod.Post, url)
             {
                 Content = content
             };
-            request.Headers.Add("Authentication", apiKey);
+            
+            // Add API key to headers
+            if (!string.IsNullOrEmpty(apiKey))
+            {
+                request.Headers.Add("Authentication", apiKey);
+            }
+            else
+            {
+                _logger.LogWarning("No API key provided for chatbot request");
+            }
 
             var response = await _httpClient.SendAsync(request);
-            response.EnsureSuccessStatusCode();
+            _logger.LogInformation($"Response status: {response.StatusCode}");
 
-            return await response.Content.ReadAsStringAsync();
+            if (response.IsSuccessStatusCode)
+            {
+                var responseContent = await response.Content.ReadAsStringAsync();
+                _logger.LogInformation($"Response received: {responseContent}");
+                return responseContent;
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                _logger.LogError($"API request failed with status {response.StatusCode}: {errorContent}");
+                return $"Tôi xin lỗi, nhưng dịch vụ đang gặp sự cố (HTTP {response.StatusCode}). Xin vui lòng thử lại sau.";
+            }
+        }
+        catch (HttpRequestException httpEx)
+        {
+            _logger.LogError(httpEx, "HTTP request error to chatbot API");
+            return $"Tôi xin lỗi, nhưng không thể kết nối đến dịch vụ chatbot. Lỗi: {httpEx.Message}";
+        }
+        catch (TaskCanceledException timeoutEx)
+        {
+            _logger.LogError(timeoutEx, "Chatbot API request timeout");
+            return "Tôi xin lỗi, nhưng yêu cầu đã hết thời gian chờ. Vui lòng thử lại.";
         }
         catch (Exception ex)
         {
-            // Return a friendly error message
-            return $"Tôi xin lỗi, nhưng kết nối đang gặp vấn đề. Xin vui lòng thử lại sau. Error: {ex.Message}";
+            _logger.LogError(ex, "Unexpected error in GenerateAnswerAsync");
+            return $"Tôi xin lỗi, nhưng đang có vấn đề xử lý yêu cầu của bạn. Lỗi: {ex.Message}";
         }
     }
 

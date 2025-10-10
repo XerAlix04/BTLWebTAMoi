@@ -28,6 +28,9 @@ builder.Services.AddScoped<ChatbotApiService>();
 builder.Services.AddScoped<FlashcardsService>();
 builder.Services.AddHttpContextAccessor();
 
+// Make sure configuration is being loaded
+var configuration = builder.Configuration;
+
 builder.Services.AddHttpClient(); // <-- MOVE THE LINE HERE
 
 // ----------------------
