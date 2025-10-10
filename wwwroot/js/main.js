@@ -519,32 +519,44 @@ loadRandomWord();
 
 
 // ======================
-// FLASHCARDS FUNCTIONALITY
+// FLASHCARDS FUNCTIONALITY WITH PAGINATION
 // ======================
 
 let flashcards = [];
+let currentPage = 1;
+let pageSize = 10; // Number of flashcards per page
+let totalPages = 1;
+let totalCount = 0;
 let practiceSession = null;
 let currentPracticeWord = null;
 let selectedChoice = null;
 
-// Load user's flashcards
-async function loadFlashcards() {
+
+// Load user's flashcards with pagination
+async function loadFlashcards(page = 1) {
     try {
-        const response = await fetch('/api/FlashcardsAPI/all', {
+        currentPage = page;
+        const response = await fetch(`/api/FlashcardsAPI?page=${page}&pageSize=${pageSize}`, {
             method: 'GET',
-            credentials: 'include' // This is important for sending session cookies
+            credentials: 'include'
         });
+
         if (!response.ok) throw new Error('Không thể tải flashcards');
 
         const result = await response.json();
-        console.log('Raw API response:', result); // Add this line
-        console.log('Flashcards data:', result.data); // Add this line
+        console.log('Raw API response:', result);
 
-        if (result.success) {
-            flashcards = result.data;
+        if (result.success && result.data) {
+            flashcards = result.data.items || [];
+            totalCount = result.data.totalCount || 0;
+            totalPages = result.data.totalPages || 1;
+            currentPage = result.data.page || 1;
+            pageSize = result.data.pageSize || pageSize;
+
             displayFlashcards();
+            renderPagination();
         } else {
-            throw new Error(result.message);
+            throw new Error(result.message || 'Dữ liệu không hợp lệ');
         }
     } catch (error) {
         console.error('Error loading flashcards:', error);
@@ -552,7 +564,7 @@ async function loadFlashcards() {
     }
 }
 
-// Display flashcards in grid
+// Display flashcards for current page
 function displayFlashcards() {
     const grid = document.getElementById('flashcardsGrid');
     const emptyState = document.getElementById('emptyFlashcards');
@@ -599,6 +611,101 @@ function displayFlashcards() {
     }
 }
 
+// Render pagination controls
+function renderPagination() {
+    const paginationContainer = document.getElementById('paginationContainer');
+    if (!paginationContainer) {
+        // Create pagination container if it doesn't exist
+        const grid = document.getElementById('flashcardsGrid');
+        const paginationHTML = `
+            <div id="paginationContainer" class="pagination-container">
+                <div class="pagination-info">
+                    Hiển thị ${flashcards.length} trên tổng số ${totalCount} flashcards
+                </div>
+                <div class="pagination-controls">
+                    ${createPaginationHTML()}
+                </div>
+            </div>
+        `;
+        grid.insertAdjacentHTML('afterend', paginationHTML);
+    } else {
+        // Update existing pagination
+        paginationContainer.innerHTML = `
+            <div class="pagination-info">
+                Hiển thị ${flashcards.length} trên tổng số ${totalCount} flashcards
+            </div>
+            <div class="pagination-controls">
+                ${createPaginationHTML()}
+            </div>
+        `;
+    }
+}
+
+// Create pagination HTML
+function createPaginationHTML() {
+    if (totalPages <= 1) return '';
+
+    let paginationHTML = '';
+
+    // Previous button
+    if (currentPage > 1) {
+        paginationHTML += `<button class="pagination-btn" onclick="loadFlashcards(${currentPage - 1})">‹ Trước</button>`;
+    } else {
+        paginationHTML += `<button class="pagination-btn disabled" disabled>‹ Trước</button>`;
+    }
+
+    // Page numbers
+    const maxVisiblePages = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+    // Adjust start page if we're near the end
+    if (endPage - startPage + 1 < maxVisiblePages) {
+        startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+
+    // First page and ellipsis
+    if (startPage > 1) {
+        paginationHTML += `<button class="pagination-btn" onclick="loadFlashcards(1)">1</button>`;
+        if (startPage > 2) {
+            paginationHTML += `<span class="pagination-ellipsis">...</span>`;
+        }
+    }
+
+    // Page numbers
+    for (let i = startPage; i <= endPage; i++) {
+        if (i === currentPage) {
+            paginationHTML += `<button class="pagination-btn active">${i}</button>`;
+        } else {
+            paginationHTML += `<button class="pagination-btn" onclick="loadFlashcards(${i})">${i}</button>`;
+        }
+    }
+
+    // Last page and ellipsis
+    if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+            paginationHTML += `<span class="pagination-ellipsis">...</span>`;
+        }
+        paginationHTML += `<button class="pagination-btn" onclick="loadFlashcards(${totalPages})">${totalPages}</button>`;
+    }
+
+    // Next button
+    if (currentPage < totalPages) {
+        paginationHTML += `<button class="pagination-btn" onclick="loadFlashcards(${currentPage + 1})">Tiếp ›</button>`;
+    } else {
+        paginationHTML += `<button class="pagination-btn disabled" disabled>Tiếp ›</button>`;
+    }
+
+    return paginationHTML;
+}
+
+// Change page size
+function changePageSize(newSize) {
+    pageSize = parseInt(newSize);
+    currentPage = 1; // Reset to first page when changing page size
+    loadFlashcards(currentPage);
+}
+
 // Remove flashcard
 async function removeFlashcard(tuVungId) {
     if (!confirm('Bạn có chắc chắc muốn xóa flashcard này?')) return;
@@ -610,7 +717,7 @@ async function removeFlashcard(tuVungId) {
         });
 
         if (response.ok) {
-            await loadFlashcards(); // Reload the list
+            await loadFlashcards(currentPage); // Reload the list
         } else {
             throw new Error('Xóa thất bại');
         }
@@ -1136,8 +1243,11 @@ function updateChatDisplay() {
 document.addEventListener('DOMContentLoaded', function () {
     initializeChatbot();
 
-    // Load flashcards when vocab tab is opened
+    // Load first page of flashcards when vocab tab is opened
     document.querySelector('nav button[onclick*="vocab"]')?.addEventListener('click', function () {
-        setTimeout(loadFlashcards, 100);
+        setTimeout(() => loadFlashcards(1), 100);
     });
+
+    // Set default page size
+    document.getElementById('pageSize').value = pageSize.toString();
 });

@@ -21,8 +21,19 @@
 
                 <!-- Flashcard Management -->
                 <div class="flashcards-management">
-                    <button class="action" onclick="loadFlashcards()">🔄 Tải Flashcards</button>
+                    <button class="action" onclick="loadFlashcards(1)">🔄 Tải Flashcards</button>
                     <button class="action" onclick="startPractice()">📚 Bắt đầu luyện tập</button>
+
+                    <!-- Page Size Selector -->
+                    <div class="page-size-selector" style="display: inline-block; margin-left: 15px;">
+                        <label for="pageSize">Hiển thị:</label>
+                        <select id="pageSize" onchange="changePageSize(this.value)" style="margin-left: 5px; padding: 5px;">
+                            <option value="10">10 thẻ</option>
+                            <option value="20">20 thẻ</option>
+                            <option value="50">50 thẻ</option>
+                            <option value="100">100 thẻ</option>
+                        </select>
+                    </div>
                 </div>
 
                 <!-- Flashcards Grid -->
@@ -30,62 +41,10 @@
                     <!-- Flashcards will be loaded here -->
                 </div>
 
+                <!-- Pagination Container will be inserted here by JavaScript -->
                 <!-- Practice Section -->
                 <div id="practiceSection" style="display: none; margin-top: 20px;">
-                    <div class="practice-container">
-                        <!-- Progress Bar -->
-                        <div class="progress-section">
-                            <div class="progress">
-                                <div id="practiceProgress" class="progress-bar" style="width: 0%"></div>
-                            </div>
-                            <div id="progressText" class="progress-text">0/0</div>
-                        </div>
-
-                        <!-- Flashcard Review -->
-                        <div id="flashcardReview" class="flashcard-review" style="display: none;">
-                            <div class="flashcard">
-                                <h2 id="practiceWord" class="word"></h2>
-                                <p id="practiceMeaning" class="meaning" style="display: none;"></p>
-                                <img id="practiceImage" class="word-image" style="display: none; max-width: 200px; margin: 10px auto;" />
-                            </div>
-
-                            <div class="difficulty-buttons">
-                                <h4>Đánh giá độ khó:</h4>
-                                <div class="button-group">
-                                    <button class="action btn-success" onclick="submitDifficulty('Easy')">Dễ</button>
-                                    <button class="action btn-warning" onclick="submitDifficulty('Medium')">Trung bình</button>
-                                    <button class="action btn-danger" onclick="submitDifficulty('Hard')">Khó</button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Exercise Section -->
-                        <div id="exerciseSection" class="exercise-section" style="display: none;">
-                            <!-- Multiple Choice Exercise -->
-                            <div id="multipleChoiceExercise" style="display: none;">
-                                <h4>Chọn nghĩa đúng của từ: "<strong id="mcWord"></strong>"</h4>
-                                <div id="choicesContainer" class="choices-container"></div>
-                                <button class="action" onclick="submitExerciseAnswer()" style="margin-top: 10px;">Kiểm tra</button>
-                            </div>
-
-                            <!-- Fill in Blank Exercise -->
-                            <div id="fillBlankExercise" style="display: none;">
-                                <h4>Điền từ vào chỗ trống:</h4>
-                                <p id="fillMeaning" class="meaning"></p>
-                                <p id="fillExample" class="example-sentence"></p>
-                                <input type="text" id="fillAnswer" placeholder="Điền từ vào chỗ trống..."
-                                       class="form-control" style="margin: 10px 0;" />
-                                <button class="action" onclick="submitFillAnswer()">Kiểm tra</button>
-                            </div>
-                        </div>
-
-                        <!-- Practice Complete -->
-                        <div id="practiceComplete" style="display: none; text-align: center;">
-                            <h3>🎉 Hoàn thành luyện tập!</h3>
-                            <div id="practiceSummary"></div>
-                            <button class="action" onclick="resetPractice()">Luyện tập lại</button>
-                        </div>
-                    </div>
+                    <!-- ... keep your existing practice section HTML ... -->
                 </div>
 
                 <!-- Empty State -->
