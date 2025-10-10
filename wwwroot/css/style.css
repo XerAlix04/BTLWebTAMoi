@@ -616,3 +616,62 @@ footer {
         margin-left: 0 !important;
     }
 }
+
+/* Exercise Feedback Styles */
+#exerciseFeedback {
+    transition: all 0.3s ease;
+}
+
+.feedback-correct {
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+}
+
+.feedback-incorrect {
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+}
+
+/* Choice item feedback */
+.choice-item.correct {
+    background-color: #d4edda;
+    border-color: #28a745;
+}
+
+.choice-item.incorrect {
+    background-color: #f8d7da;
+    border-color: #dc3545;
+}
+
+.choice-item.correct.selected {
+    background-color: #28a745;
+    color: white;
+}
+
+.choice-item.incorrect.selected {
+    background-color: #dc3545;
+    color: white;
+}
+
+/* Retry section */
+#retrySection {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 4px solid #ffc107;
+}
+
+#retryWordsList ul {
+    text-align: left;
+    max-width: 300px;
+    margin: 10px auto;
+}
+
+#retryWordsList li {
+    margin: 5px 0;
+    padding: 5px;
+    background: white;
+    border-radius: 4px;
+}
