@@ -426,6 +426,81 @@ footer {
         border-color: #007bff;
     }
 
+/* Flip Animation Styles */
+.flip-container {
+    perspective: 1000px;
+    margin: 10px 0;
+    width: 100%;
+    max-width: 350px;
+    margin-left: auto;
+    margin-right: auto;
+    height: 150px; /* Add fixed height */
+}
+
+.flipper {
+    position: relative;
+    width: 100%;
+    height: 100%; /* Use 100% of container height */
+    transition: transform 0.6s;
+    transform-style: preserve-3d;
+}
+
+.flip-container.flip .flipper {
+    transform: rotateY(180deg);
+}
+
+.flashcard-front, .flashcard-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.flashcard-back {
+    transform: rotateY(180deg);
+    background: #f8f9ff;
+    border: 2px solid #007bff;
+    border-radius: 12px;
+}
+
+/* Ensure the flashcard content is properly styled */
+.flashcard-review .flashcard {
+    width: 100%;
+    height: 100%;
+    text-align: center;
+    padding: 20px;
+    border: 2px solid #007bff;
+    border-radius: 12px;
+    background: #f8f9ff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Loading animation for the back side */
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
 /* Chatbot Styles */
 /* Multi-chat styles */
 .chat-sidebar {

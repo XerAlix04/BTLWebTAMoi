@@ -55,18 +55,30 @@
 
                         <!-- Flashcard Review -->
                         <div id="flashcardReview" class="flashcard-review" style="display: none;">
-                            <div class="flashcard">
-                                <h2 id="practiceWord" class="word"></h2>
-                                <p id="practiceMeaning" class="meaning" style="display: none;"></p>
-                                <img id="practiceImage" class="word-image" style="display: none; max-width: 200px; margin: 10px auto;" />
+                            <!-- Add the flip container -->
+                            <div class="flip-container">
+                                <div class="flipper">
+                                    <div class="flashcard-front">
+                                        <div class="flashcard">
+                                            <h2 id="practiceWord" class="word"></h2>
+                                            <p id="practiceMeaning" class="meaning" style="display: none;"></p>
+                                            <img id="practiceImage" class="word-image" style="display: none; max-width: 200px; margin: 10px auto;" />
+                                        </div>
+                                    </div>
+                                    <div class="flashcard-back">
+                                        <!-- This side remains empty or can show loading -->
+                                        <div class="loading-spinner"></div>
+                                        <p style="margin-top: 10px; color: #666;">Đang tải từ tiếp theo...</p>
+                                    </div>
+                                </div>
                             </div>
 
                             <div class="difficulty-buttons">
                                 <h4>Đánh giá độ khó:</h4>
                                 <div class="button-group">
-                                    <button class="action btn-success" onclick="submitDifficulty('Easy')">Dễ</button>
-                                    <button class="action btn-warning" onclick="submitDifficulty('Medium')">Trung bình</button>
-                                    <button class="action btn-danger" onclick="submitDifficulty('Hard')">Khó</button>
+                                    <button class="action btn-success" onclick="submitDifficultyWithAnimation('Easy')">Dễ</button>
+                                    <button class="action btn-warning" onclick="submitDifficultyWithAnimation('Medium')">Trung bình</button>
+                                    <button class="action btn-danger" onclick="submitDifficultyWithAnimation('Hard')">Khó</button>
                                 </div>
                             </div>
                         </div>

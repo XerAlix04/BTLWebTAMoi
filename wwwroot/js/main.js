@@ -532,6 +532,7 @@ let currentPracticeWord = null;
 let selectedChoice = null;
 let maxAttempts = 2; // Number of attempts allowed per exercise
 let incorrectAnswers = []; // Track incorrect answers for retry
+let isAnimating = false; 
 
 
 // Load user's flashcards with pagination
@@ -846,6 +847,10 @@ function showFlashcardReview() {
     document.getElementById('exerciseSection').style.display = 'none';
     document.getElementById('practiceComplete').style.display = 'none'; // Hide completion
 
+    // Reset flip animation
+    const flipContainer = document.querySelector('.flip-container');
+    flipContainer.classList.remove('flip');
+
     // Use camelCase properties
     document.getElementById('practiceWord').textContent = currentPracticeWord.word.tu || 'No word';
     document.getElementById('practiceMeaning').textContent = currentPracticeWord.word.nghia || 'No meaning';
@@ -860,13 +865,36 @@ function showFlashcardReview() {
     }
 }
 
-// Submit difficulty rating
-function submitDifficulty(difficulty) {
-    currentPracticeWord.difficulty = difficulty;
-    practiceSession.completedWords.push(currentPracticeWord);
-    practiceSession.remainingWords.shift();
+// New function to handle difficulty submission with animation
+async function submitDifficultyWithAnimation(difficulty) {
+    if (isAnimating) return;
 
-    showNextPracticeWord();
+    isAnimating = true;
+
+    // Start flip animation
+    const flipContainer = document.querySelector('.flip-container');
+    flipContainer.classList.add('flip');
+
+    // Wait for animation to complete
+    setTimeout(async () => {
+        // Submit the difficulty
+        currentPracticeWord.difficulty = difficulty;
+        practiceSession.completedWords.push(currentPracticeWord);
+        practiceSession.remainingWords.shift();
+
+        // Show next word after a brief pause
+        setTimeout(() => {
+            showNextPracticeWord();
+            isAnimating = false;
+        }, 200); // Reduced from 300
+    }, 500); // Reduced from 600 - match with faster animation
+}
+
+// Keep the original submitDifficulty function for backward compatibility
+// but it won't be used directly anymore
+function submitDifficulty(difficulty) {
+    // This is now just a fallback, use submitDifficultyWithAnimation instead
+    submitDifficultyWithAnimation(difficulty);
 }
 
 // Setup exercises after initial review
@@ -1175,6 +1203,13 @@ function finishPractice() {
 function resetPractice() {
     document.getElementById('practiceSection').style.display = 'none';
     document.getElementById('retrySection').style.display = 'none';
+
+    // Reset animation state
+    const flipContainer = document.querySelector('.flip-container');
+    if (flipContainer) {
+        flipContainer.classList.remove('flip');
+    }
+    isAnimating = false;
 
     // Show the flashcards grid and pagination
     document.getElementById('flashcardsGrid').style.display = 'grid';
