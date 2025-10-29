@@ -537,6 +537,9 @@ let incorrectAnswers = []; // Track incorrect answers for retry
 // Load user's flashcards with pagination
 async function loadFlashcards(page = 1) {
     try {
+        // Reset any active practice session
+        resetPractice();
+
         currentPage = page;
         const response = await fetch(`/api/FlashcardsAPI?page=${page}&pageSize=${pageSize}`, {
             method: 'GET',
@@ -846,7 +849,7 @@ function showFlashcardReview() {
     // Use camelCase properties
     document.getElementById('practiceWord').textContent = currentPracticeWord.word.tu || 'No word';
     document.getElementById('practiceMeaning').textContent = currentPracticeWord.word.nghia || 'No meaning';
-    document.getElementById('practiceMeaning').style.display = 'none';
+    document.getElementById('practiceMeaning').style.display = 'block';
 
     const imageEl = document.getElementById('practiceImage');
     if (currentPracticeWord.word.hinhAnh) {
