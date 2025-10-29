@@ -427,6 +427,92 @@ footer {
     }
 
 /* Chatbot Styles */
+/* Multi-chat styles */
+.chat-sidebar {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+}
+
+.chat-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.chat-item {
+    transition: all 0.2s ease;
+    border: 1px solid #dee2e6;
+}
+
+    .chat-item:hover {
+        background: #e9ecef !important;
+        color: #000 !important;
+    }
+
+    .chat-item.active {
+        background: #007bff !important;
+        color: white !important;
+    }
+
+.chat-item-actions {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.chat-item:hover .chat-item-actions {
+    opacity: 1;
+}
+
+.chat-item.active .chat-item-actions {
+    opacity: 1;
+}
+
+.btn-small {
+    padding: 2px 6px;
+    font-size: 0.7em;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.btn-danger {
+    background: #dc3545;
+    color: white;
+}
+
+    .btn-danger:hover {
+        background: #c82333;
+    }
+
+.chat-main {
+    min-height: 500px;
+}
+
+.empty-chat {
+    padding: 40px 20px;
+    text-align: center;
+    color: #666;
+}
+
+/* Scrollbar styling */
+.chat-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.chat-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.chat-list::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+    .chat-list::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8;
+    }
+
 .chat-messages {
     background: #fafafa;
 }

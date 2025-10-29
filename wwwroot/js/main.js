@@ -1194,19 +1194,155 @@ function resetPractice() {
 // ======================
 
 let chatSession = {
+    currentChatId: null,
+    chats: {},
     username: '',
-    gender: '',
-    messages: []
+    gender: 'Other'
 };
 
-// Initialize chatbot
-function initializeChatbot() {
-    // Load saved session from localStorage
-    const savedSession = localStorage.getItem('chatSession');
-    if (savedSession) {
-        chatSession = JSON.parse(savedSession);
-        updateChatDisplay();
+// Initialize Multi-Chat System
+function initializeMultiChat() {
+    loadAllChatSessions();
+    renderChatList();
+    switchToCurrentChat();
+}
+
+// Load all chat sessions from localStorage
+function loadAllChatSessions() {
+    const savedSessions = localStorage.getItem('chatSessions');
+    if (savedSessions) {
+        chatSessions = JSON.parse(savedSessions);
     }
+
+    // Initialize if empty
+    if (!chatSessions.chats) {
+        chatSessions.chats = {};
+    }
+
+    // Create default chat if no chats exist
+    if (Object.keys(chatSessions.chats).length === 0) {
+        createNewChat();
+    }
+}
+
+// Save all chat sessions to localStorage
+function saveAllChatSessions() {
+    localStorage.setItem('chatSessions', JSON.stringify(chatSessions));
+}
+
+// Create a new chat
+function createNewChat() {
+    const chatId = 'chat_' + Date.now();
+    const newChat = {
+        id: chatId,
+        title: 'Cuộc trò chuyện mới',
+        messages: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        messageCount: 0
+    };
+
+    chatSessions.chats[chatId] = newChat;
+    chatSessions.currentChatId = chatId;
+
+    saveAllChatSessions();
+    renderChatList();
+    switchToCurrentChat();
+
+    return chatId;
+}
+
+// Switch to a specific chat
+function switchToChat(chatId) {
+    if (!chatSessions.chats[chatId]) return;
+
+    chatSessions.currentChatId = chatId;
+    saveAllChatSessions();
+    switchToCurrentChat();
+}
+
+// Switch to current chat
+function switchToCurrentChat() {
+    const currentChat = getCurrentChat();
+
+    if (currentChat) {
+        document.getElementById('currentChatTitle').textContent = currentChat.title;
+        displayChatMessages(currentChat.messages);
+        updateChatInfo(currentChat);
+        updateMessageCount();
+
+        // Update username if available
+        if (chatSessions.username) {
+            document.getElementById('username').value = chatSessions.username;
+        }
+    } else {
+        // No chat selected
+        document.getElementById('chatMessages').innerHTML = `
+            <div class="empty-chat" style="text-align: center; color: #666; padding: 40px 20px;">
+                <div style="font-size: 48px;">💬</div>
+                <h4>Chưa có cuộc trò chuyện nào</h4>
+                <p>Nhấn "Cuộc trò chuyện mới" để bắt đầu!</p>
+            </div>
+        `;
+        document.getElementById('messageCount').textContent = '💬 0 tin nhắn';
+        document.getElementById('chatInfo').textContent = '';
+    }
+}
+
+// Get current chat object
+function getCurrentChat() {
+    return chatSessions.chats[chatSessions.currentChatId];
+}
+
+// Render chat list in sidebar
+function renderChatList() {
+    const chatList = document.getElementById('chatList');
+    const chats = Object.values(chatSessions.chats);
+
+    // Sort by updated time (newest first)
+    chats.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+
+    if (chats.length === 0) {
+        chatList.innerHTML = '<div style="text-align: center; color: #666; padding: 20px;">Chưa có cuộc trò chuyện nào</div>';
+        return;
+    }
+
+    chatList.innerHTML = chats.map(chat => `
+        <div class="chat-item ${chat.id === chatSessions.currentChatId ? 'active' : ''}" 
+             onclick="switchToChat('${chat.id}')"
+             style="padding: 10px; margin: 5px 0; border-radius: 6px; cursor: pointer; 
+                    background: ${chat.id === chatSessions.currentChatId ? '#007bff' : 'transparent'};
+                    color: ${chat.id === chatSessions.currentChatId ? 'white' : 'inherit'};
+                    border: 1px solid ${chat.id === chatSessions.currentChatId ? '#007bff' : '#ddd'};">
+            <div style="font-weight: 500; margin-bottom: 4px;">${chat.title}</div>
+            <div style="font-size: 0.8em; opacity: 0.7;">
+                ${chat.messageCount} tin nhắn • ${formatDate(chat.updatedAt)}
+            </div>
+            <div class="chat-item-actions" style="margin-top: 5px; display: flex; gap: 5px;">
+                <button class="btn-small" onclick="event.stopPropagation(); renameChat('${chat.id}')" 
+                        style="padding: 2px 6px; font-size: 0.7em;">✏️</button>
+                <button class="btn-small btn-danger" onclick="event.stopPropagation(); deleteChat('${chat.id}')" 
+                        style="padding: 2px 6px; font-size: 0.7em;">🗑️</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Format date for display
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Vừa xong';
+    if (diffMins < 60) return `${diffMins} phút trước`;
+    if (diffHours < 24) return `${diffHours} giờ trước`;
+    if (diffDays < 7) return `${diffDays} ngày trước`;
+
+    return date.toLocaleDateString('vi-VN');
 }
 
 // Update user info
@@ -1214,14 +1350,14 @@ function updateUserInfo() {
     const username = document.getElementById('username').value.trim();
     const gender = document.getElementById('gender').value;
 
-    if (!username || !gender) {
+    if (!username) {
         alert('Vui lòng điền đầy đủ thông tin!');
         return;
     }
 
     chatSession.username = username;
-    chatSession.gender = gender;
-    saveChatSession();
+    chatSession.gender = "Other";
+    saveAllChatSession();
     alert('Thông tin đã được cập nhật!');
 }
 
@@ -1235,14 +1371,34 @@ async function sendChatMessage() {
         return;
     }
 
-    if (!chatSession.username || !chatSession.gender) {
-        alert('Vui lòng cập nhật thông tin người dùng trước!');
-        return;
+    // Ensure we have a current chat
+    if (!chatSessions.currentChatId || !getCurrentChat()) {
+        createNewChat();
+    }
+
+    const currentChat = getCurrentChat();
+
+    // Auto-set username if empty
+    if (!chatSession.username) {
+        const username = document.getElementById('username').value.trim();
+        if (!username) {
+            alert('Vui lòng cập nhật tên của bạn trước!');
+            return;
+        }
+        chatSession.username = username;
+        chatSession.gender = "Other"; // Auto-set gender
     }
 
     // Add user message
     addMessageToChat('user', chatSession.username, message);
     input.value = '';
+
+    // Update chat title if first message
+    if (currentChat.messages.length === 1) {
+        const newTitle = message.length > 30 ? message.substring(0, 30) + '...' : message;
+        currentChat.title = newTitle;
+        document.getElementById('currentChatTitle').textContent = newTitle;
+    }
 
     // Show typing indicator
     const typingIndicator = addMessageToChat('bot', 'English Assistant', 'Đang trả lời...');
@@ -1251,7 +1407,7 @@ async function sendChatMessage() {
         const formData = new URLSearchParams({
             userQuestion: message,
             username: chatSession.username,
-            gender: chatSession.gender
+            gender: "Other"
         });
 
         const response = await fetch('/Chatbot/Index', {
@@ -1270,17 +1426,22 @@ async function sendChatMessage() {
         typingIndicator.remove();
 
         // Check if we got a valid response or an error page
+        let botResponse;
         if (responseText.includes('Xin lỗi') || responseText.includes('lỗi') || responseText.includes('error')) {
-            // Use fallback responses for common questions
-            const fallbackResponse = getFallbackResponse(message);
-            addMessageToChat('bot', 'English Assistant', fallbackResponse);
+            botResponse = getFallbackResponse(message);
         } else {
-            // Try to extract the bot response from the HTML
             const parser = new DOMParser();
             const doc = parser.parseFromString(responseText, 'text/html');
-            const botMessage = extractBotMessage(doc) || getFallbackResponse(message);
-            addMessageToChat('bot', 'English Assistant', botMessage);
+            botResponse = extractBotMessage(doc) || getFallbackResponse(message);
         }
+
+        addMessageToChat('bot', 'English Assistant', botResponse);
+
+        // Update chat metadata
+        currentChat.updatedAt = new Date().toISOString();
+        currentChat.messageCount = currentChat.messages.length;
+        saveAllChatSessions();
+        renderChatList();
 
     } catch (error) {
         console.error('Chat error:', error);
@@ -1352,6 +1513,9 @@ function getFallbackResponse(userMessage) {
 
 // Add message to chat display
 function addMessageToChat(messageType, sender, message) {
+    const currentChat = getCurrentChat();
+    if (!currentChat) return null;
+
     const chatMessages = document.getElementById('chatMessages');
 
     // Remove empty state if it exists
@@ -1385,43 +1549,193 @@ function addMessageToChat(messageType, sender, message) {
         MessageType: messageType
     });
 
-    saveChatSession();
+    // Update message count
+    currentChat.messageCount = currentChat.messages.length;
     updateMessageCount();
 
     return messageElement;
 }
 
-// Clear chat
-function clearChat() {
-    if (!confirm('Bạn có chắc chắn muốn xóa toàn bộ tin nhắn?')) return;
+// Display chat messages
+function displayChatMessages(messages) {
+    const chatMessages = document.getElementById('chatMessages');
+    chatMessages.innerHTML = '';
 
-    chatSession.messages = [];
-    document.getElementById('chatMessages').innerHTML = `
-            <div class="empty-chat" style="text-align: center; color: #666;">
+    if (!messages || messages.length === 0) {
+        chatMessages.innerHTML = `
+            <div class="empty-chat" style="text-align: center; color: #666; padding: 40px 20px;">
                 <div style="font-size: 48px;">💬</div>
                 <h4>Chưa có tin nhắn nào</h4>
                 <p>Gửi tin nhắn để bắt đầu trò chuyện!</p>
             </div>
         `;
+        return;
+    }
 
-    saveChatSession();
-    updateMessageCount();
+    messages.forEach(message => {
+        const messageElement = document.createElement('div');
+        messageElement.className = `message ${message.MessageType === 'user' ? 'user-message' : 'bot-message'}`;
+
+        messageElement.innerHTML = `
+            <div class="message-avatar">
+                ${message.MessageType === 'user' ? '👤' : '🤖'}
+            </div>
+            <div class="message-content">
+                <div class="message-sender">${message.Sender}</div>
+                <div class="message-text">${message.Message}</div>
+                <div class="message-time">${new Date(message.Timestamp).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</div>
+            </div>
+        `;
+
+        chatMessages.appendChild(messageElement);
+    });
+
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+// Update message count
+function updateMessageCount() {
+    const currentChat = getCurrentChat();
+    const count = currentChat ? currentChat.messages.length : 0;
+    document.getElementById('messageCount').textContent = `💬 ${count} tin nhắn`;
+}
+
+// Update chat info
+function updateChatInfo(chat) {
+    const chatInfo = document.getElementById('chatInfo');
+    if (chat) {
+        chatInfo.textContent = `Tạo: ${formatDate(chat.createdAt)} • Cập nhật: ${formatDate(chat.updatedAt)}`;
+    } else {
+        chatInfo.textContent = '';
+    }
+}
+
+// Chat management functions
+function renameCurrentChat() {
+    const currentChat = getCurrentChat();
+    if (!currentChat) return;
+
+    const newTitle = prompt('Nhập tên mới cho cuộc trò chuyện:', currentChat.title);
+    if (newTitle && newTitle.trim()) {
+        currentChat.title = newTitle.trim();
+        document.getElementById('currentChatTitle').textContent = newTitle.trim();
+        currentChat.updatedAt = new Date().toISOString();
+        saveAllChatSessions();
+        renderChatList();
+    }
+}
+
+function renameChat(chatId) {
+    const chat = chatSessions.chats[chatId];
+    if (!chat) return;
+
+    const newTitle = prompt('Nhập tên mới cho cuộc trò chuyện:', chat.title);
+    if (newTitle && newTitle.trim()) {
+        chat.title = newTitle.trim();
+        chat.updatedAt = new Date().toISOString();
+        saveAllChatSessions();
+        renderChatList();
+
+        // Update current chat title if this is the current chat
+        if (chatId === chatSessions.currentChatId) {
+            document.getElementById('currentChatTitle').textContent = newTitle.trim();
+        }
+    }
+}
+
+function deleteCurrentChat() {
+    const currentChat = getCurrentChat();
+    if (!currentChat) return;
+
+    if (confirm(`Bạn có chắc chắn muốn xóa cuộc trò chuyện "${currentChat.title}"?`)) {
+        deleteChat(chatSessions.currentChatId);
+    }
+}
+
+function deleteChat(chatId) {
+    if (!chatSessions.chats[chatId]) return;
+
+    delete chatSessions.chats[chatId];
+
+    // If we deleted the current chat, switch to another one or create new
+    if (chatSessions.currentChatId === chatId) {
+        const remainingChats = Object.keys(chatSessions.chats);
+        if (remainingChats.length > 0) {
+            chatSessions.currentChatId = remainingChats[0];
+        } else {
+            chatSessions.currentChatId = null;
+        }
+    }
+
+    saveAllChatSessions();
+    renderChatList();
+    switchToCurrentChat();
+}
+
+function deleteAllChats() {
+    if (Object.keys(chatSessions.chats).length === 0) return;
+
+    if (confirm('Bạn có chắc chắn muốn xóa TẤT CẢ cuộc trò chuyện? Hành động này không thể hoàn tác.')) {
+        chatSessions.chats = {};
+        chatSessions.currentChatId = null;
+        saveAllChatSessions();
+        renderChatList();
+        switchToCurrentChat();
+    }
+}
+
+// Export functions
+function exportCurrentChat() {
+    const currentChat = getCurrentChat();
+    if (!currentChat || currentChat.messages.length === 0) {
+        alert('Không có tin nhắn để xuất!');
+        return;
+    }
+    exportChat(currentChat);
+}
+
+function exportAllChats() {
+    const chats = Object.values(chatSessions.chats);
+    if (chats.length === 0) {
+        alert('Không có cuộc trò chuyện nào để xuất!');
+        return;
+    }
+
+    let exportContent = `English Assistant - Tất cả cuộc trò chuyện\n`;
+    exportContent += `============================================\n`;
+    exportContent += `Export Date: ${new Date().toLocaleString('vi-VN')}\n`;
+    exportContent += `Total Conversations: ${chats.length}\n\n`;
+
+    chats.forEach((chat, index) => {
+        exportContent += `Conversation ${index + 1}: ${chat.title}\n`;
+        exportContent += `Created: ${new Date(chat.createdAt).toLocaleString('vi-VN')}\n`;
+        exportContent += `Messages: ${chat.messageCount}\n`;
+        exportContent += `-------------------\n`;
+
+        chat.messages.forEach(message => {
+            const senderLabel = message.MessageType === 'user' ? 'User' : 'Assistant';
+            const time = new Date(message.Timestamp).toLocaleTimeString('vi-VN');
+            exportContent += `[${senderLabel} - ${time}]\n`;
+            exportContent += `${message.Message}\n\n`;
+        });
+
+        exportContent += '\n'.repeat(3);
+    });
+
+    downloadTextFile(exportContent, `English_All_Chats_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.txt`);
 }
 
 // Export chat
 function exportChat() {
-    if (chatSession.messages.length === 0) {
-        alert('Không có tin nhắn để xuất!');
-        return;
-    }
-
-    let exportContent = `English Assistant Chatbot - Conversation Export\n`;
-    exportContent += `==============================================\n`;
+    let exportContent = `English Assistant Chat Export\n`;
+    exportContent += `=============================\n`;
+    exportContent += `Title: ${chat.title}\n`;
     exportContent += `Export Date: ${new Date().toLocaleString('vi-VN')}\n`;
-    exportContent += `User: ${chatSession.username}\n`;
-    exportContent += `Gender: ${chatSession.gender}\n\n`;
-    exportContent += `Conversation History:\n`;
-    exportContent += `-------------------\n\n`;
+    exportContent += `Created: ${new Date(chat.createdAt).toLocaleString('vi-VN')}\n`;
+    exportContent += `Last Updated: ${new Date(chat.updatedAt).toLocaleString('vi-VN')}\n`;
+    exportContent += `Total Messages: ${chat.messageCount}\n\n`;
+    exportContent += `Conversation:\n`;
+    exportContent += `-------------\n\n`;
 
     chatSession.messages.forEach(message => {
         const senderLabel = message.MessageType === 'user' ? 'User' : 'Assistant';
@@ -1430,11 +1744,17 @@ function exportChat() {
         exportContent += `${message.Message}\n\n`;
     });
 
-    const blob = new Blob([exportContent], { type: 'text/plain' });
+    downloadTextFile(exportContent, `English_Chat_${chat.title.replace(/[^a-z0-9]/gi, '_')}_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.txt`);
+
+    
+}
+
+function downloadTextFile(content, filename) {
+    const blob = new Blob([content], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `English_Chat_Export_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.txt`;
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -1444,63 +1764,13 @@ function exportChat() {
 // Use suggestion
 function useSuggestion(question) {
     document.getElementById('chatInput').value = question;
+    document.getElementById('chatInput').focus();
 }
 
-// Save chat session
-function saveChatSession() {
-    localStorage.setItem('chatSession', JSON.stringify(chatSession));
-}
-
-// Update message count
-function updateMessageCount() {
-    document.getElementById('messageCount').textContent =
-        `💬 ${chatSession.messages.length} tin nhắn`;
-}
-
-// Update chat display
-function updateChatDisplay() {
-    const chatMessages = document.getElementById('chatMessages');
-    chatMessages.innerHTML = '';
-
-    if (chatSession.messages.length === 0) {
-        chatMessages.innerHTML = `
-                <div class="empty-chat" style="text-align: center; color: #666;">
-                    <div style="font-size: 48px;">💬</div>
-                    <h4>Chưa có tin nhắn nào</h4>
-                    <p>Gửi tin nhắn để bắt đầu trò chuyện!</p>
-                </div>
-            `;
-    } else {
-        chatSession.messages.forEach(message => {
-            const messageElement = document.createElement('div');
-            messageElement.className = `message ${message.MessageType === 'user' ? 'user-message' : 'bot-message'}`;
-
-            messageElement.innerHTML = `
-                    <div class="message-avatar">
-                        ${message.MessageType === 'user' ? '👤' : '🤖'}
-                    </div>
-                    <div class="message-content">
-                        <div class="message-sender">${message.Sender}</div>
-                        <div class="message-text">${message.Message}</div>
-                        <div class="message-time">${new Date(message.Timestamp).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</div>
-                    </div>
-                `;
-
-            chatMessages.appendChild(messageElement);
-        });
-    }
-
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-    updateMessageCount();
-
-    // Update form fields
-    document.getElementById('username').value = chatSession.username || '';
-    document.getElementById('gender').value = chatSession.gender || '';
-}
 
 // Initialize when page loads
 document.addEventListener('DOMContentLoaded', function () {
-    initializeChatbot();
+    initializeMultiChat();
 
     // Load first page of flashcards when vocab tab is opened
     document.querySelector('nav button[onclick*="vocab"]')?.addEventListener('click', function () {
@@ -1509,4 +1779,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Set default page size
     document.getElementById('pageSize').value = pageSize.toString();
+
+    // Add Enter key support for chat input
+    document.getElementById('chatInput').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            sendChatMessage();
+        }
+    });
 });
