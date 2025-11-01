@@ -1228,7 +1228,7 @@ function resetPractice() {
 // CHATBOT FUNCTIONALITY
 // ======================
 
-let chatSession = {
+let chatSessions = {
     currentChatId: null,
     chats: {},
     username: '',
@@ -1392,7 +1392,7 @@ function updateUserInfo() {
 
     chatSession.username = username;
     chatSession.gender = "Other";
-    saveAllChatSession();
+    saveAllChatSessions();
     alert('Thông tin đã được cập nhật!');
 }
 
