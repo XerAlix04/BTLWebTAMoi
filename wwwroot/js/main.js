@@ -1390,8 +1390,8 @@ function updateUserInfo() {
         return;
     }
 
-    chatSession.username = username;
-    chatSession.gender = "Other";
+    chatSessions.username = username;
+    chatSessions.gender = "Other";
     saveAllChatSessions();
     alert('Thông tin đã được cập nhật!');
 }
@@ -1414,18 +1414,18 @@ async function sendChatMessage() {
     const currentChat = getCurrentChat();
 
     // Auto-set username if empty
-    if (!chatSession.username) {
+    if (!chatSessions.username) {
         const username = document.getElementById('username').value.trim();
         if (!username) {
             alert('Vui lòng cập nhật tên của bạn trước!');
             return;
         }
-        chatSession.username = username;
-        chatSession.gender = "Other"; // Auto-set gender
+        chatSessions.username = username;
+        chatSessions.gender = "Other"; // Auto-set gender
     }
 
     // Add user message
-    addMessageToChat('user', chatSession.username, message);
+    addMessageToChat('user', chatSessions.username, message);
     input.value = '';
 
     // Update chat title if first message
@@ -1441,7 +1441,7 @@ async function sendChatMessage() {
     try {
         const formData = new URLSearchParams({
             userQuestion: message,
-            username: chatSession.username,
+            username: chatSessions.username,
             gender: "Other"
         });
 
@@ -1576,16 +1576,20 @@ function addMessageToChat(messageType, sender, message) {
     chatMessages.appendChild(messageElement);
     chatMessages.scrollTop = chatMessages.scrollHeight;
 
-    // Add to session
-    chatSession.messages.push({
+    // Add to current chat's messages array
+    currentChat.messages.push({
         Sender: sender,
         Message: message,
         Timestamp: new Date().toISOString(),
         MessageType: messageType
     });
 
-    // Update message count
-    currentChat.messageCount = currentChat.messages.length;
+    // Update chat metadata
+    currentChat.updatedAt = new Date().toISOString();
+
+    // Save and update UI
+    saveAllChatSessions();
+    renderChatList();
     updateMessageCount();
 
     return messageElement;
@@ -1772,7 +1776,7 @@ function exportChat() {
     exportContent += `Conversation:\n`;
     exportContent += `-------------\n\n`;
 
-    chatSession.messages.forEach(message => {
+    chat.messages.forEach(message => {
         const senderLabel = message.MessageType === 'user' ? 'User' : 'Assistant';
         const time = new Date(message.Timestamp).toLocaleTimeString('vi-VN');
         exportContent += `[${senderLabel} - ${time}]\n`;
